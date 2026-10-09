@@ -2,9 +2,9 @@
 /**
  * Plugin Name: かんたん投稿
  * Description: 生産者がスマホから写真と一言を送るだけでブログ記事（下書き）を作れる投稿フォームを追加します。LINE公式アカウントからの投稿にも対応。
- * Version:     1.7.1
+ * Version:     1.8.0
  * Author:      農場スタッフ
- * Text Domain: shumei-kantan-toko
+ * Text Domain: kantan-toko
  * License:     GPL-2.0-or-later
  */
 
@@ -12,7 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SKT_VERSION', '1.7.1' );
+// 旧フォルダ名の版がまだ有効なときは、二重に読み込まない（同名クラスで停止するのを防ぐ）。
+if ( defined( 'SKT_VERSION' ) ) {
+	return;
+}
+
+define( 'SKT_VERSION', '1.8.0' );
 
 /**
  * 初めて有効化したときに、守るカテゴリとして自動で指定する名前。

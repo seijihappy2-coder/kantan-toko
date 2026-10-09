@@ -14,7 +14,7 @@ LINE公式アカウントからの投稿にも対応しています（任意）�
 
 ## 1. 入れる（5分）
 
-1. `shumei-kantan-toko.zip` を用意する
+1. `kantan-toko.zip` を用意する
 2. WordPress管理画面 → **プラグイン** → **新規プラグインを追加** → **プラグインのアップロード**
 3. zipを選んで **今すぐインストール** → **プラグインを有効化**
 
@@ -173,14 +173,15 @@ LINE Official Account Manager から確認してください。
 ## ファイル構成
 
 ```
-shumei-kantan-toko/
-├── shumei-kantan-toko.php        プラグイン本体
+kantan-toko/
+├── kantan-toko.php               プラグイン本体
 ├── includes/
 │   ├── class-skt-settings.php    設定の読み書き
 │   ├── class-skt-media.php       写真の取り込み
 │   ├── class-skt-post-creator.php 記事づくり（フォーム・LINE共通）
 │   ├── class-skt-rest.php        投稿を受け取る窓口
 │   ├── class-skt-frontend.php    投稿ページの表示
+│   ├── class-skt-gallery.php     写真ギャラリー
 │   ├── class-skt-line.php        LINE連携
 │   └── class-skt-admin.php       管理画面
 └── assets/
