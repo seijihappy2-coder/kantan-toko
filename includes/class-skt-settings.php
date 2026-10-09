@@ -11,6 +11,9 @@ class SKT_Settings {
 
 	const OPTION = 'skt_settings';
 
+	/** 合言葉の最低文字数。短いと総当たりで破られる。 */
+	const MIN_PASSPHRASE = 8;
+
 	/** 「定型文を入れる」で差し込まれる雛形。{日付} は今日の日付に置き換わる。 */
 	const DEFAULT_TEMPLATE = "{日付}　天気　気温　度\n【作業時間】　時　分〜　時　分\n【作業内容】\n\n参加者：";
 
@@ -92,7 +95,7 @@ class SKT_Settings {
 	 */
 	public static function set_passphrase( $plain ) {
 		$plain = trim( (string) $plain );
-		if ( '' === $plain ) {
+		if ( mb_strlen( $plain ) < self::MIN_PASSPHRASE ) {
 			return false;
 		}
 		self::update( array( 'passphrase_hash' => wp_hash_password( $plain ) ) );
@@ -104,7 +107,7 @@ class SKT_Settings {
 	 */
 	public static function set_admin_passphrase( $plain ) {
 		$plain = trim( (string) $plain );
-		if ( '' === $plain ) {
+		if ( mb_strlen( $plain ) < self::MIN_PASSPHRASE ) {
 			return false;
 		}
 		self::update( array( 'admin_passphrase_hash' => wp_hash_password( $plain ) ) );

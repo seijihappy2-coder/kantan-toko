@@ -135,6 +135,7 @@ class SKT_Rest {
 		}
 		$role = SKT_Settings::role_for( $request->get_param( 'passphrase' ) );
 		if ( '' === $role ) {
+			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
 		}
 		return new WP_REST_Response(
@@ -155,6 +156,7 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'message' => '短時間に送りすぎです。しばらく待ってからお試しください。' ), 429 );
 		}
 		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。画面を再読み込みして入れ直してください。' ), 403 );
 		}
 
@@ -298,6 +300,7 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'message' => '短時間に操作しすぎです。しばらく待ってからお試しください。' ), 429 );
 		}
 		if ( ! SKT_Settings::check_admin_passphrase( $request->get_param( 'passphrase' ) ) ) {
+			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '管理者用の合言葉が必要です。' ), 403 );
 		}
 		return null;
@@ -599,6 +602,41 @@ class SKT_Rest {
 	private static function rate_key( $bucket ) {
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
 		return 'skt_rate_' . $bucket . '_' . md5( $ip );
+	}
+
+	/**
+	 * 合言葉を間違えた回数が多いとき、管理者にメールで知らせる。
+	 *
+	 * わざと締め出しはしない。締め出す作りにすると、攻撃者が
+	 * わざと失敗させて生産者を使えなくできてしまうため。
+	 */
+	private static function warn_on_failures() {
+		$key   = self::rate_key( 'fail' );
+		$count = (int) get_transient( $key ) + 1;
+		set_transient( $key, $count, HOUR_IN_SECONDS );
+
+		if ( 10 !== $count ) {
+			return; // 10回目のときだけ1通。
+		}
+
+		$to = SKT_Settings::get( 'notify_email' );
+		if ( empty( $to ) || ! is_email( $to ) ) {
+			return;
+		}
+
+		wp_mail(
+			$to,
+			sprintf( '[%s] 投稿ページで合言葉の入力が続けて失敗しています', get_bloginfo( 'name' ) ),
+			implode(
+				"\n",
+				array(
+					'1時間に10回以上、合言葉の入力に失敗しています。',
+					'生産者が忘れただけのこともありますが、心当たりがなければ合言葉を変えてください。',
+					'',
+					'変更: ' . admin_url( 'admin.php?page=' . SKT_Admin::PAGE ),
+				)
+			)
+		);
 	}
 
 	/**

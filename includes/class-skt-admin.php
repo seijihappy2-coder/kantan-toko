@@ -74,16 +74,18 @@ class SKT_Admin {
 			)
 		);
 
+		$short = false;
+
 		$passphrase = trim( wp_unslash( $_POST['passphrase'] ?? '' ) );
-		if ( '' !== $passphrase ) {
-			SKT_Settings::set_passphrase( $passphrase );
+		if ( '' !== $passphrase && ! SKT_Settings::set_passphrase( $passphrase ) ) {
+			$short = true;
 		}
 
 		$admin_passphrase = trim( wp_unslash( $_POST['admin_passphrase'] ?? '' ) );
 		if ( ! empty( $_POST['admin_passphrase_clear'] ) ) {
 			SKT_Settings::clear_admin_passphrase();
-		} elseif ( '' !== $admin_passphrase ) {
-			SKT_Settings::set_admin_passphrase( $admin_passphrase );
+		} elseif ( '' !== $admin_passphrase && ! SKT_Settings::set_admin_passphrase( $admin_passphrase ) ) {
+			$short = true;
 		}
 
 		if ( $before['slug'] !== $slug ) {
@@ -91,7 +93,16 @@ class SKT_Admin {
 			flush_rewrite_rules();
 		}
 
-		wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE, 'updated' => '1' ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'    => self::PAGE,
+					'updated' => '1',
+					'short'   => $short ? '1' : null,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
@@ -112,6 +123,12 @@ class SKT_Admin {
 
 			<?php if ( ! empty( $_GET['updated'] ) ) : ?>
 				<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $_GET['short'] ) ) : ?>
+				<div class="notice notice-error"><p>
+					合言葉が短すぎるため変更しませんでした。<?php echo (int) SKT_Settings::MIN_PASSPHRASE; ?>文字以上にしてください。
+				</p></div>
 			<?php endif; ?>
 
 			<?php if ( empty( $s['passphrase_hash'] ) ) : ?>
@@ -142,6 +159,8 @@ class SKT_Admin {
 								placeholder="<?php echo empty( $s['passphrase_hash'] ) ? '例：ibaraki2026' : '変更するときだけ入力'; ?>">
 							<p class="description">
 								<?php echo empty( $s['passphrase_hash'] ) ? '生産者全員で共有する合言葉です。' : '設定済みです。空のままなら変更されません。'; ?>
+								<strong><?php echo (int) SKT_Settings::MIN_PASSPHRASE; ?>文字以上</strong>にしてください（短いと破られます）。
+								推測されにくい語を2つつなげる形がおすすめです。例：<code>hatake-asaichi-26</code>
 							</p>
 						</td>
 					</tr>
@@ -154,6 +173,7 @@ class SKT_Admin {
 								こちらの合言葉で投稿ページに入ると、<strong>「確認・公開」画面</strong>が出ます。
 								届いた記事をスマホで確認して、公開・非公開の切り替えや文章の手直しができます。
 								<?php echo empty( $s['admin_passphrase_hash'] ) ? '設定しなければ管理モードは使えません。' : '設定済みです。'; ?>
+								こちらも<?php echo (int) SKT_Settings::MIN_PASSPHRASE; ?>文字以上にしてください。
 							</p>
 							<?php if ( ! empty( $s['admin_passphrase_hash'] ) ) : ?>
 								<label><input type="checkbox" name="admin_passphrase_clear" value="1"> 管理者用の合言葉を削除する（管理モードを使わない）</label>
