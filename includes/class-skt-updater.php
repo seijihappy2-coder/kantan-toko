@@ -101,18 +101,29 @@ class SKT_Updater {
 		if ( ! $latest || empty( $latest['package'] ) ) {
 			return $transient;
 		}
-		if ( ! version_compare( $latest['version'], SKT_VERSION, '>' ) ) {
-			return $transient;
-		}
 
-		$transient->response[ self::basename() ] = (object) array(
+		$item = (object) array(
 			'slug'        => self::slug(),
 			'plugin'      => self::basename(),
 			'new_version' => $latest['version'],
 			'url'         => $latest['url'],
 			'package'     => $latest['package'],
 			'tested'      => get_bloginfo( 'version' ),
+			'icons'       => array(),
+			'banners'     => array(),
 		);
+
+		if ( version_compare( $latest['version'], SKT_VERSION, '>' ) ) {
+			$transient->response[ self::basename() ] = $item;
+			unset( $transient->no_update[ self::basename() ] );
+			return $transient;
+		}
+
+		// 最新のときも「更新に対応している」と伝える。
+		// これが無いと、プラグイン一覧に「自動更新を有効化」のリンクが出ない。
+		$item->new_version = SKT_VERSION;
+		$transient->no_update[ self::basename() ] = $item;
+		unset( $transient->response[ self::basename() ] );
 
 		return $transient;
 	}
