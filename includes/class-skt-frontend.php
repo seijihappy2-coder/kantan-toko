@@ -65,6 +65,9 @@ class SKT_Frontend {
 
 		$out = array();
 		foreach ( $terms as $term ) {
+			if ( SKT_Settings::is_protected_category( $term->term_id ) ) {
+				continue; // 守るカテゴリは選ばせない。
+			}
 			$out[] = array(
 				'id'   => (int) $term->term_id,
 				'name' => $term->name,

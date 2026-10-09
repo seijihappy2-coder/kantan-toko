@@ -24,6 +24,7 @@ class SKT_Settings {
 			'admin_passphrase_hash' => '',
 			'authors'              => array(),
 			'default_category'     => 0,
+			'protected_categories' => array(),
 			'post_status'          => 'draft',
 			'notify_email'         => get_option( 'admin_email' ),
 			'post_author_id'       => 0,
@@ -160,6 +161,30 @@ class SKT_Settings {
 	public static function author_names() {
 		$authors = self::get( 'authors' );
 		return is_array( $authors ) ? array_values( array_filter( $authors ) ) : array();
+	}
+
+	/**
+	 * 守るカテゴリ（ツールから見せない・変えさせない）。
+	 */
+	public static function protected_categories() {
+		$ids = self::get( 'protected_categories' );
+		return is_array( $ids ) ? array_map( 'intval', $ids ) : array();
+	}
+
+	public static function is_protected_category( $term_id ) {
+		return in_array( (int) $term_id, self::protected_categories(), true );
+	}
+
+	/**
+	 * この記事は守るカテゴリに入っているか。
+	 */
+	public static function post_is_protected( $post_id ) {
+		$ids = self::protected_categories();
+		if ( empty( $ids ) ) {
+			return false;
+		}
+		$terms = wp_get_post_categories( (int) $post_id );
+		return (bool) array_intersect( $ids, array_map( 'intval', $terms ) );
 	}
 
 	/**

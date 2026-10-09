@@ -59,6 +59,7 @@ class SKT_Admin {
 				'slug'                => $slug,
 				'authors'             => $authors,
 				'default_category'    => (int) ( $_POST['default_category'] ?? 0 ),
+				'protected_categories' => array_map( 'intval', (array) ( $_POST['protected_categories'] ?? array() ) ),
 				'post_status'         => 'publish' === ( $_POST['post_status'] ?? '' ) ? 'publish' : 'draft',
 				'notify_email'        => sanitize_email( wp_unslash( $_POST['notify_email'] ?? '' ) ),
 				'post_author_id'      => (int) ( $_POST['post_author_id'] ?? 0 ),
@@ -178,6 +179,25 @@ class SKT_Admin {
 						<th scope="row"><label for="skt-default-category">既定のカテゴリ</label></th>
 						<td>
 							<?php self::category_select( 'default_category', (int) $s['default_category'], $categories ); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">守るカテゴリ</th>
+						<td>
+							<fieldset>
+								<?php foreach ( $categories as $category ) : ?>
+									<label style="display:block;margin-bottom:4px;">
+										<input type="checkbox" name="protected_categories[]" value="<?php echo (int) $category->term_id; ?>"
+											<?php checked( SKT_Settings::is_protected_category( $category->term_id ) ); ?>>
+										<?php echo esc_html( $category->name ); ?>
+									</label>
+								<?php endforeach; ?>
+							</fieldset>
+							<p class="description">
+								選んだカテゴリは、投稿ページの選択肢に出ず、名前の変更も削除もできません。
+								そのカテゴリの記事も「確認・公開」に出ず、公開・非公開の切り替えや削除ができません。<br>
+								農法の説明記事など、生産者の日常投稿と混ぜたくないものに使ってください。
+							</p>
 						</td>
 					</tr>
 					<tr>

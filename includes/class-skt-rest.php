@@ -242,9 +242,10 @@ class SKT_Rest {
 
 		$posts = get_posts(
 			array(
-				'post_type'   => 'post',
-				'post_status' => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-				'numberposts' => 10,
+				'post_type'        => 'post',
+				'post_status'      => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+				'numberposts'      => 10,
+				'category__not_in' => SKT_Settings::protected_categories(),
 				'meta_key'    => '_skt_author_name', // phpcs:ignore WordPress.DB.SlowDBQuery
 				'meta_value'  => $author_name, // phpcs:ignore WordPress.DB.SlowDBQuery
 			)
@@ -278,6 +279,9 @@ class SKT_Rest {
 		$post = get_post( (int) $post_id );
 		if ( ! $post || 'post' !== $post->post_type ) {
 			return null;
+		}
+		if ( SKT_Settings::post_is_protected( $post->ID ) ) {
+			return null; // 守るカテゴリの記事（農法の説明など）もさわらせない。
 		}
 		return $post;
 	}
@@ -313,6 +317,7 @@ class SKT_Rest {
 				'post_type'        => 'post',
 				'post_status'      => array( 'publish', 'draft', 'pending', 'private', 'future' ),
 				'numberposts'      => 30,
+				'category__not_in' => SKT_Settings::protected_categories(),
 				'orderby'          => 'date',
 				'order'            => 'DESC',
 				'suppress_filters' => false,
@@ -462,6 +467,10 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'message' => 'カテゴリ名を入れてください。' ), 400 );
 		}
 
+		if ( $id && SKT_Settings::is_protected_category( $id ) ) {
+			return new WP_REST_Response( array( 'message' => 'このカテゴリは変更できない設定になっています。' ), 403 );
+		}
+
 		switch ( $op ) {
 			case 'create':
 				$result = wp_insert_term( $name, 'category' );
@@ -499,6 +508,9 @@ class SKT_Rest {
 	public static function category_list() {
 		$out = array();
 		foreach ( get_categories( array( 'hide_empty' => false ) ) as $term ) {
+			if ( SKT_Settings::is_protected_category( $term->term_id ) ) {
+				continue;
+			}
 			$out[] = array(
 				'id'    => (int) $term->term_id,
 				'name'  => $term->name,
