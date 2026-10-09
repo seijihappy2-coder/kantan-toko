@@ -66,6 +66,8 @@ class SKT_Admin {
 				'max_photos'          => max( 1, min( 20, (int) ( $_POST['max_photos'] ?? 8 ) ) ),
 				'template'            => sanitize_textarea_field( wp_unslash( $_POST['template'] ?? '' ) ),
 				'help_contact'        => sanitize_text_field( wp_unslash( $_POST['help_contact'] ?? '' ) ),
+				'video_url'           => esc_url_raw( wp_unslash( $_POST['video_url'] ?? '' ) ),
+				'video_heading'       => sanitize_text_field( wp_unslash( $_POST['video_heading'] ?? '' ) ),
 				'line_enabled'        => empty( $_POST['line_enabled'] ) ? 0 : 1,
 				'line_channel_secret' => sanitize_text_field( wp_unslash( $_POST['line_channel_secret'] ?? '' ) ),
 				'line_access_token'   => sanitize_text_field( wp_unslash( $_POST['line_access_token'] ?? '' ) ),
@@ -87,6 +89,9 @@ class SKT_Admin {
 		} elseif ( '' !== $admin_passphrase && ! SKT_Settings::set_admin_passphrase( $admin_passphrase ) ) {
 			$short = true;
 		}
+
+		SKT_Content::forget( $before['video_url'] );
+		SKT_Content::forget( $_POST['video_url'] ?? '' );
 
 		if ( $before['slug'] !== $slug ) {
 			SKT_Frontend::add_rewrite_rules();
@@ -255,6 +260,20 @@ class SKT_Admin {
 							<p class="description">
 								投稿画面の「定型文を入れる」ボタンで差し込まれます。<code>{日付}</code> は今日の日付（例：10月9日(金)）に置き換わります。
 								空にするとボタンが出ません。
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="skt-video-url">記事の下に入れる動画</label></th>
+						<td>
+							<input type="url" id="skt-video-url" name="video_url" class="regular-text" value="<?php echo esc_attr( $s['video_url'] ); ?>" placeholder="https://www.youtube.com/watch?v=...">
+							<p class="description">
+								すべての記事の本文の下に、この動画を自動で表示します。記事を書くたびに貼る必要はありません。
+								空にすると表示しません。<strong>記事自体には書き込まないので、変更すれば過去の記事もまとめて変わります。</strong>
+							</p>
+							<p>
+								<label for="skt-video-heading">見出し</label><br>
+								<input type="text" id="skt-video-heading" name="video_heading" class="regular-text" value="<?php echo esc_attr( $s['video_heading'] ); ?>" placeholder="自然栽培について">
 							</p>
 						</td>
 					</tr>

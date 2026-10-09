@@ -26,16 +26,44 @@ class SKT_Gallery {
 	 * @param bool $include_hidden 隠した写真も含めるか（管理モード用）。
 	 * @return array
 	 */
-	public static function photos( $limit = 200, $include_hidden = false ) {
-		$posts = get_posts(
-			array(
-				'post_type'   => 'post',
-				'post_status' => 'publish',
-				'numberposts' => 200,
-				'orderby'     => 'date',
-				'order'       => 'DESC',
-			)
+	public static function photos( $limit = 200, $include_hidden = false, $category = '' ) {
+		$args = array(
+			'post_type'   => 'post',
+			'post_status' => 'publish',
+			'numberposts' => 200,
+			'orderby'     => 'date',
+			'order'       => 'DESC',
 		);
+
+		// カテゴリは画面に出ている名前で指定できるようにする（スラッグやIDでも可、カンマ区切りで複数も可）。
+		$category = trim( (string) $category );
+		if ( '' !== $category ) {
+			$ids = array();
+			foreach ( array_map( 'trim', explode( ',', $category ) ) as $one ) {
+				if ( '' === $one ) {
+					continue;
+				}
+				if ( is_numeric( $one ) ) {
+					$ids[] = (int) $one;
+					continue;
+				}
+				$term = get_term_by( 'name', $one, 'category' );
+				if ( ! $term ) {
+					$term = get_term_by( 'slug', $one, 'category' );
+				}
+				if ( $term ) {
+					$ids[] = (int) $term->term_id;
+				}
+			}
+
+			if ( empty( $ids ) ) {
+				return array(); // 指定されたカテゴリが見つからない。
+			}
+
+			$args['category__in'] = $ids;
+		}
+
+		$posts = get_posts( $args );
 
 		if ( empty( $posts ) ) {
 			return array();
@@ -148,14 +176,15 @@ class SKT_Gallery {
 	public static function shortcode( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'limit'   => 200,
-				'columns' => 4,
+				'limit'    => 200,
+				'columns'  => 4,
+				'category' => '',
 			),
 			$atts,
 			'kantan_gallery'
 		);
 
-		$photos = self::photos( (int) $atts['limit'] );
+		$photos = self::photos( (int) $atts['limit'], false, (string) $atts['category'] );
 		if ( empty( $photos ) ) {
 			return '<p>公開中の記事に写真がありません。記事を公開すると、その写真がここに並びます。</p>';
 		}

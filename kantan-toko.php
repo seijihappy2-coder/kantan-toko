@@ -2,7 +2,7 @@
 /**
  * Plugin Name: かんたん投稿
  * Description: 生産者がスマホから写真と一言を送るだけでブログ記事（下書き）を作れる投稿フォームを追加します。LINE公式アカウントからの投稿にも対応。
- * Version:     1.10.0
+ * Version:     1.11.0
  * Author:      農場スタッフ
  * Text Domain: kantan-toko
  * License:     GPL-2.0-or-later
@@ -17,7 +17,7 @@ if ( defined( 'SKT_VERSION' ) ) {
 	return;
 }
 
-define( 'SKT_VERSION', '1.10.0' );
+define( 'SKT_VERSION', '1.11.0' );
 
 /**
  * 初めて有効化したときに、守るカテゴリとして自動で指定するカテゴリ名。
@@ -33,6 +33,7 @@ require_once SKT_PATH . 'includes/class-skt-media.php';
 require_once SKT_PATH . 'includes/class-skt-post-creator.php';
 require_once SKT_PATH . 'includes/class-skt-rest.php';
 require_once SKT_PATH . 'includes/class-skt-frontend.php';
+require_once SKT_PATH . 'includes/class-skt-content.php';
 require_once SKT_PATH . 'includes/class-skt-gallery.php';
 require_once SKT_PATH . 'includes/class-skt-line.php';
 require_once SKT_PATH . 'includes/class-skt-admin.php';
@@ -45,6 +46,7 @@ function skt_bootstrap() {
 	SKT_Frontend::init();
 	SKT_Rest::init();
 	SKT_Gallery::init();
+	SKT_Content::init();
 	SKT_Admin::init();
 	SKT_Updater::init();
 }
