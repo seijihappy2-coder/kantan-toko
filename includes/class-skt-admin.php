@@ -63,6 +63,7 @@ class SKT_Admin {
 				'notify_email'        => sanitize_email( wp_unslash( $_POST['notify_email'] ?? '' ) ),
 				'post_author_id'      => (int) ( $_POST['post_author_id'] ?? 0 ),
 				'max_photos'          => max( 1, min( 20, (int) ( $_POST['max_photos'] ?? 8 ) ) ),
+				'template'            => sanitize_textarea_field( wp_unslash( $_POST['template'] ?? '' ) ),
 				'line_enabled'        => empty( $_POST['line_enabled'] ) ? 0 : 1,
 				'line_channel_secret' => sanitize_text_field( wp_unslash( $_POST['line_channel_secret'] ?? '' ) ),
 				'line_access_token'   => sanitize_text_field( wp_unslash( $_POST['line_access_token'] ?? '' ) ),
@@ -203,6 +204,16 @@ class SKT_Admin {
 					<tr>
 						<th scope="row"><label for="skt-max-photos">写真の枚数</label></th>
 						<td><input type="number" id="skt-max-photos" name="max_photos" min="1" max="20" value="<?php echo esc_attr( $s['max_photos'] ); ?>" class="small-text"> 枚まで</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="skt-template">定型文</label></th>
+						<td>
+							<textarea id="skt-template" name="template" rows="6" class="large-text"><?php echo esc_textarea( $s['template'] ); ?></textarea>
+							<p class="description">
+								投稿画面の「定型文を入れる」ボタンで差し込まれます。<code>{日付}</code> は今日の日付（例：10月9日(金)）に置き換わります。
+								空にするとボタンが出ません。
+							</p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="skt-slug">投稿ページのURL</label></th>

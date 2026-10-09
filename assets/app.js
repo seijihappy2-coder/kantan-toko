@@ -45,6 +45,7 @@
 		title: document.getElementById('skt-title'),
 		body: document.getElementById('skt-body'),
 		submit: document.getElementById('skt-submit'),
+		template: document.getElementById('skt-template'),
 		again: document.getElementById('skt-again'),
 		max: document.getElementById('skt-max')
 	};
@@ -185,6 +186,13 @@
 			store(STORE_AUTHOR, el.author.value.trim());
 		});
 		el.category.addEventListener('change', toggleNewCategory);
+		el.template.hidden = !cfg.template;
+		el.template.addEventListener('click', function () {
+			var current = el.body.value.trim();
+			el.body.value = current ? current + '\n\n' + cfg.template : cfg.template;
+			saveDraft();
+			el.body.focus();
+		});
 		el.catAdd.addEventListener('click', function () {
 			var name = el.catNew.value.trim();
 			if (!name) { return; }

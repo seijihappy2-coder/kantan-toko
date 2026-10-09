@@ -11,6 +11,9 @@ class SKT_Settings {
 
 	const OPTION = 'skt_settings';
 
+	/** 「定型文を入れる」で差し込まれる雛形。{日付} は今日の日付に置き換わる。 */
+	const DEFAULT_TEMPLATE = "{日付}　天気　気温　度\n【作業時間】　時　分〜　時　分\n【作業内容】\n\n参加者：";
+
 	/**
 	 * 既定値。
 	 */
@@ -25,6 +28,7 @@ class SKT_Settings {
 			'notify_email'         => get_option( 'admin_email' ),
 			'post_author_id'       => 0,
 			'max_photos'           => 8,
+			'template'             => self::DEFAULT_TEMPLATE,
 			'line_enabled'         => 0,
 			'line_channel_secret'  => '',
 			'line_access_token'    => '',
