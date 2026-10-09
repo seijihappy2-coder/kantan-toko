@@ -64,6 +64,7 @@ class SKT_Admin {
 				'post_author_id'      => (int) ( $_POST['post_author_id'] ?? 0 ),
 				'max_photos'          => max( 1, min( 20, (int) ( $_POST['max_photos'] ?? 8 ) ) ),
 				'template'            => sanitize_textarea_field( wp_unslash( $_POST['template'] ?? '' ) ),
+				'help_contact'        => sanitize_text_field( wp_unslash( $_POST['help_contact'] ?? '' ) ),
 				'line_enabled'        => empty( $_POST['line_enabled'] ) ? 0 : 1,
 				'line_channel_secret' => sanitize_text_field( wp_unslash( $_POST['line_channel_secret'] ?? '' ) ),
 				'line_access_token'   => sanitize_text_field( wp_unslash( $_POST['line_access_token'] ?? '' ) ),
@@ -213,6 +214,13 @@ class SKT_Admin {
 								投稿画面の「定型文を入れる」ボタンで差し込まれます。<code>{日付}</code> は今日の日付（例：10月9日(金)）に置き換わります。
 								空にするとボタンが出ません。
 							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="skt-help-contact">困ったときの連絡先</label></th>
+						<td>
+							<input type="text" id="skt-help-contact" name="help_contact" class="regular-text" value="<?php echo esc_attr( $s['help_contact'] ); ?>" placeholder="例：事務局 鶴田（090-0000-0000）">
+							<p class="description">投稿ページの「困ったときは」に表示します。空なら出ません。</p>
 						</td>
 					</tr>
 					<tr>

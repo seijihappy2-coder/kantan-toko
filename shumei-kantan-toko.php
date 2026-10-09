@@ -3,7 +3,7 @@
  * Plugin Name: 秀明ファーム茨木 かんたん投稿
  * Plugin URI:  https://xs905657.xsrv.jp/shumei-ibaraki/
  * Description: 生産者がスマホから写真と一言を送るだけでブログ記事（下書き）を作れる投稿フォームを追加します。LINE公式アカウントからの投稿にも対応。
- * Version:     1.3.0
+ * Version:     1.4.0
  * Author:      秀明自然農法ファーム茨木
  * Text Domain: shumei-kantan-toko
  * License:     GPL-2.0-or-later
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SKT_VERSION', '1.3.0' );
+define( 'SKT_VERSION', '1.4.0' );
 define( 'SKT_FILE', __FILE__ );
 define( 'SKT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SKT_URL', plugin_dir_url( __FILE__ ) );

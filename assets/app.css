@@ -411,3 +411,18 @@ body {
 .skt-cat-name { flex: 1; min-width: 0; }
 
 #skt-cats .skt-item-actions .skt-input { flex: 1; width: auto; }
+
+.skt-help { padding: 14px 18px; }
+
+.skt-help-list { margin: 10px 0 0; }
+
+.skt-help-list dt {
+	font-weight: 700;
+	margin-top: 12px;
+}
+
+.skt-help-list dd {
+	margin: 2px 0 0;
+	color: var(--skt-muted);
+	font-size: 15px;
+}

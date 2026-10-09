@@ -172,6 +172,38 @@ class SKT_Frontend {
 		<p class="skt-note skt-foot">送信した記事は担当者が確認してから公開されます。</p>
 	</form>
 
+	<details id="skt-help" class="skt-card skt-help" hidden>
+		<summary class="skt-summary">困ったときは</summary>
+		<dl class="skt-help-list">
+			<dt>またこのページを開きたい</dt>
+			<dd>ブラウザの共有ボタン（□に↑のマーク）から「ホーム画面に追加」を選ぶと、アイコンから開けます。</dd>
+
+			<dt>送信できない</dt>
+			<dd>電波の良い場所で、もう一度「送信する」を押してください。書いた文章は消えずに残っています。</dd>
+
+			<dt>写真を選びまちがえた</dt>
+			<dd>写真の右上の × を押すと取り消せます。</dd>
+
+			<dt>合言葉をまた聞かれた</dt>
+			<dd>スマホのデータが消えたときに出ます。担当者に確認して、もう一度入れてください。</dd>
+
+			<?php if ( ! empty( $settings['template'] ) ) : ?>
+			<dt>「定型文を入れる」とは</dt>
+			<dd>作業記録の雛形が入ります。自分の書き方に直してから「自分の定型文にする」を押すと、次からその形で出ます。</dd>
+			<?php endif; ?>
+
+			<?php if ( 'publish' !== $settings['post_status'] ) : ?>
+			<dt>送ったのにブログに出ない</dt>
+			<dd>すぐには出ません。担当者が確認してから公開します。</dd>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $settings['help_contact'] ) ) : ?>
+			<dt>それでも分からない</dt>
+			<dd><?php echo esc_html( $settings['help_contact'] ); ?></dd>
+			<?php endif; ?>
+		</dl>
+	</details>
+
 	<section id="skt-sending" class="skt-card skt-center" hidden>
 		<div class="skt-spinner"></div>
 		<p id="skt-sending-text">写真を準備しています…</p>

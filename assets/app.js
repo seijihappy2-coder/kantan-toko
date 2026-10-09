@@ -16,6 +16,7 @@
 
 	var el = {
 		tabs: document.getElementById('skt-tabs'),
+		help: document.getElementById('skt-help'),
 		manage: document.getElementById('skt-manage'),
 		manageToast: document.getElementById('skt-manage-toast'),
 		list: document.getElementById('skt-list'),
@@ -97,6 +98,7 @@
 		[el.login, el.setup, el.form, el.sending, el.done, el.manage].forEach(function (node) {
 			if (node) { node.hidden = node !== section; }
 		});
+		el.help.hidden = section !== el.form;
 		markTab(section === el.manage ? 'manage' : 'post');
 		window.scrollTo(0, 0);
 	}

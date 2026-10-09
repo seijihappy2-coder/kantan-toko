@@ -29,6 +29,7 @@ class SKT_Settings {
 			'post_author_id'       => 0,
 			'max_photos'           => 8,
 			'template'             => self::DEFAULT_TEMPLATE,
+			'help_contact'         => '',
 			'line_enabled'         => 0,
 			'line_channel_secret'  => '',
 			'line_access_token'    => '',
