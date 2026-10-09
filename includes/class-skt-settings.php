@@ -232,6 +232,6 @@ class SKT_Settings {
 	 * LINE Webhook のURL。
 	 */
 	public static function line_webhook_url() {
-		return rest_url( 'shumei-toko/v1/line' );
+		return rest_url( SKT_Rest::NS . '/line' );
 	}
 }

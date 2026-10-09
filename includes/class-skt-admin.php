@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SKT_Admin {
 
-	const PAGE = 'shumei-kantan-toko';
+	const PAGE = 'kantan-toko';
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );

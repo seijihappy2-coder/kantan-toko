@@ -2,7 +2,7 @@
 /**
  * Plugin Name: かんたん投稿
  * Description: 生産者がスマホから写真と一言を送るだけでブログ記事（下書き）を作れる投稿フォームを追加します。LINE公式アカウントからの投稿にも対応。
- * Version:     1.8.2
+ * Version:     1.9.0
  * Author:      農場スタッフ
  * Text Domain: kantan-toko
  * License:     GPL-2.0-or-later
@@ -17,13 +17,13 @@ if ( defined( 'SKT_VERSION' ) ) {
 	return;
 }
 
-define( 'SKT_VERSION', '1.8.2' );
+define( 'SKT_VERSION', '1.9.0' );
 
 /**
- * 初めて有効化したときに、守るカテゴリとして自動で指定する名前。
- * このサイト固有の値。使う農場に合わせて書き換える（空にすれば何も指定しない）。
+ * 初めて有効化したときに、守るカテゴリとして自動で指定するカテゴリ名。
+ * 農場ごとに違うので既定は空。必要なら書き換えるか、管理画面で指定する。
  */
-define( 'SKT_PROTECT_BY_DEFAULT', '秀明自然農法とは' );
+define( 'SKT_PROTECT_BY_DEFAULT', '' );
 define( 'SKT_FILE', __FILE__ );
 define( 'SKT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SKT_URL', plugin_dir_url( __FILE__ ) );
@@ -57,7 +57,7 @@ function skt_activate() {
 
 	// 農法の説明記事は生産者の日常投稿とは別もの。初回だけ既定で守る対象にする。
 	$saved = get_option( SKT_Settings::OPTION, array() );
-	if ( ! is_array( $saved ) || ! array_key_exists( 'protected_categories', $saved ) ) {
+	if ( '' !== SKT_PROTECT_BY_DEFAULT && ( ! is_array( $saved ) || ! array_key_exists( 'protected_categories', $saved ) ) ) {
 		$term = get_term_by( 'name', SKT_PROTECT_BY_DEFAULT, 'category' );
 		SKT_Settings::update( array( 'protected_categories' => $term ? array( (int) $term->term_id ) : array() ) );
 	}

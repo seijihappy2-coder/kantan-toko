@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SKT_Rest {
 
-	const NS = 'shumei-toko/v1';
+	const NS = 'kantan-toko/v1';
 
 	/** 同じ回線から1時間に受け付ける送信回数 */
 	const SUBMIT_LIMIT = 40;
