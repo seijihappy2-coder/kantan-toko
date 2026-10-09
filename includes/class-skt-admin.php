@@ -67,6 +67,8 @@ class SKT_Admin {
 				'template'            => sanitize_textarea_field( wp_unslash( $_POST['template'] ?? '' ) ),
 				'help_contact'        => sanitize_text_field( wp_unslash( $_POST['help_contact'] ?? '' ) ),
 				'video_url'           => esc_url_raw( wp_unslash( $_POST['video_url'] ?? '' ) ),
+				'link_label'          => sanitize_text_field( wp_unslash( $_POST['link_label'] ?? '' ) ),
+				'link_url'            => esc_url_raw( wp_unslash( $_POST['link_url'] ?? '' ) ),
 				'video_heading'       => sanitize_text_field( wp_unslash( $_POST['video_heading'] ?? '' ) ),
 				'line_enabled'        => empty( $_POST['line_enabled'] ) ? 0 : 1,
 				'line_channel_secret' => sanitize_text_field( wp_unslash( $_POST['line_channel_secret'] ?? '' ) ),
@@ -275,6 +277,17 @@ class SKT_Admin {
 								<label for="skt-video-heading">見出し</label><br>
 								<input type="text" id="skt-video-heading" name="video_heading" class="regular-text" value="<?php echo esc_attr( $s['video_heading'] ); ?>" placeholder="自然栽培について">
 							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="skt-link-url">投稿ページに置く参考リンク</label></th>
+						<td>
+							<input type="url" id="skt-link-url" name="link_url" class="regular-text" value="<?php echo esc_attr( $s['link_url'] ); ?>" placeholder="https://example.com/">
+							<p>
+								<label for="skt-link-label">ボタンの文字</label><br>
+								<input type="text" id="skt-link-label" name="link_label" class="regular-text" value="<?php echo esc_attr( $s['link_label'] ); ?>" placeholder="例：自然栽培のヒントを見る">
+							</p>
+							<p class="description">投稿ページの下にボタンとして出ます。畑にいるときに調べたい参考サイトなどに。空なら出ません。</p>
 						</td>
 					</tr>
 					<tr>

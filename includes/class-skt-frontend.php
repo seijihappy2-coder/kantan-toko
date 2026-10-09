@@ -126,6 +126,16 @@ class SKT_Frontend {
 	</header>
 
 	<div id="skt-install" class="skt-install" hidden>
+		<span class="skt-install-icon" id="skt-icon-ios" hidden aria-hidden="true">
+			<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M12 3v11"/><path d="M8 7l4-4 4 4"/><path d="M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/>
+			</svg>
+		</span>
+		<span class="skt-install-icon" id="skt-icon-android" hidden aria-hidden="true">
+			<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor">
+				<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/>
+			</svg>
+		</span>
 		<p class="skt-install-text"></p>
 		<button type="button" id="skt-install-close" class="skt-btn skt-btn-small skt-btn-ghost">閉じる</button>
 	</div>
@@ -189,6 +199,12 @@ class SKT_Frontend {
 		<p class="skt-note">名前を選ぶと、その名前で送った記事の今の状態が出ます。</p>
 		<div id="skt-mine-list"></div>
 	</details>
+
+	<?php if ( ! empty( $settings['link_url'] ) ) : ?>
+	<a class="skt-btn skt-btn-ghost skt-reference" href="<?php echo esc_url( $settings['link_url'] ); ?>" target="_blank" rel="noopener">
+		<?php echo esc_html( $settings['link_label'] ? $settings['link_label'] : '参考サイトを見る' ); ?>
+	</a>
+	<?php endif; ?>
 
 	<details id="skt-help" class="skt-card skt-help" hidden>
 		<summary class="skt-summary">困ったときは</summary>

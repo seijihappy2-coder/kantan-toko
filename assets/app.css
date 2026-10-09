@@ -491,3 +491,18 @@ body {
 }
 
 .skt-install .skt-btn { flex: 0 0 auto; min-height: 40px; padding: 6px 12px; }
+
+.skt-install-icon {
+	flex: 0 0 auto;
+	color: var(--skt-green-dark);
+	background: #fff;
+	border-radius: 8px;
+	padding: 6px;
+	line-height: 0;
+}
+
+.skt-reference {
+	display: flex;
+	margin-bottom: 16px;
+	text-decoration: none;
+}

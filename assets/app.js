@@ -113,20 +113,26 @@
 
 		var ua = navigator.userAgent || '';
 		var text;
+		var icon = '';
 
 		if (/Line\//i.test(ua)) {
-			text = 'いまLINEの中で開いています。右下（iPhoneは右上）の「…」から「ブラウザで開く」を選ぶと、' +
-				'ホーム画面に追加できるようになります。';
+			text = 'いまLINEの中で開いています。このままでは次回も探すことになります。' +
+				'画面のすみにある「…」を押して「ブラウザで開く」を選んでください。';
 		} else if (/iPhone|iPad|iPod/i.test(ua)) {
-			text = '画面の下にある「共有」（□に↑のしるし）を押して、少し下にスクロールし、' +
-				'「ホーム画面に追加」を選んでください。次からアイコンを押すだけで開けます。';
+			icon = 'skt-icon-ios';
+			text = '次からすぐ開けるようにします。画面の一番下のまん中にある、右のしるしを押してください。' +
+				'出てきた一覧を指で上に動かすと「ホーム画面に追加」があります。';
 		} else if (/Android/i.test(ua)) {
-			text = '画面の右上の「︙」を押して、「ホーム画面に追加」（または「アプリをインストール」）を' +
-				'選んでください。次からアイコンを押すだけで開けます。';
+			icon = 'skt-icon-android';
+			text = '次からすぐ開けるようにします。画面の右上にある、右のしるしを押してください。' +
+				'出てきた一覧から「ホーム画面に追加」を選んでください。';
 		} else {
 			return; // パソコンでは案内しない。
 		}
 
+		if (icon) {
+			document.getElementById(icon).hidden = false;
+		}
 		box.querySelector('.skt-install-text').textContent = text;
 		box.hidden = false;
 

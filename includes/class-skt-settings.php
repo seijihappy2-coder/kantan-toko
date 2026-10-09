@@ -35,6 +35,8 @@ class SKT_Settings {
 			'template'             => self::DEFAULT_TEMPLATE,
 			'help_contact'         => '',
 			'video_url'            => '',
+			'link_label'           => '',
+			'link_url'             => '',
 			'video_heading'        => '自然栽培について',
 			'line_enabled'         => 0,
 			'line_channel_secret'  => '',
