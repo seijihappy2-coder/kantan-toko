@@ -169,9 +169,9 @@ class SKT_Frontend {
 		<div id="skt-previews" class="skt-previews"></div>
 
 		<label class="skt-label" for="skt-author">名前</label>
-		<p class="skt-note">はじめての方は入力してください。次からは候補に出ます。</p>
-		<input type="text" id="skt-author" class="skt-input" list="skt-author-list" autocomplete="off" placeholder="お名前を入れてください">
-		<datalist id="skt-author-list"></datalist>
+		<p class="skt-note">はじめての方は「＋ 新しい名前を入れる」を選んでください。次からは一覧に出ます。</p>
+		<select id="skt-author" class="skt-select"></select>
+		<input type="text" id="skt-new-author" class="skt-input skt-gap" placeholder="お名前を入れてください" hidden>
 
 		<label class="skt-label" for="skt-category">カテゴリ</label>
 		<select id="skt-category" class="skt-select"></select>

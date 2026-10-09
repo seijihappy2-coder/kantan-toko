@@ -12,6 +12,7 @@
 	var STORE_TPL = 'skt_tpl';
 	var STORE_HINT = 'skt_hint';
 	var NEW_CATEGORY = '__new__';
+	var NEW_AUTHOR = '__new__';
 
 	var photos = []; // { blob, url, name }
 
@@ -41,7 +42,7 @@
 		fileInput: document.getElementById('skt-photos'),
 		previews: document.getElementById('skt-previews'),
 		author: document.getElementById('skt-author'),
-		authorList: document.getElementById('skt-author-list'),
+		newAuthor: document.getElementById('skt-new-author'),
 		category: document.getElementById('skt-category'),
 		newCategory: document.getElementById('skt-new-category'),
 		catList: document.getElementById('skt-cat-list'),
@@ -195,16 +196,29 @@
 	}
 
 	/**
-	 * 名前の候補。自分の名前は端末に覚えさせる。
+	 * 名前の選択肢。カテゴリと同じ作りにそろえる。
+	 * 末尾は「＋ 新しい名前を入れる」。
 	 */
 	function fillAuthors() {
-		el.authorList.innerHTML = '';
-		(cfg.authors || []).forEach(function (name) {
-			var option = document.createElement('option');
-			option.value = name;
-			el.authorList.appendChild(option);
+		var items = (cfg.authors || []).map(function (name) {
+			return { value: name, label: name };
 		});
-		el.author.value = load(STORE_AUTHOR) || '';
+		items.push({ value: NEW_AUTHOR, label: '＋ 新しい名前を入れる' });
+		fillSelect(el.author, items, load(STORE_AUTHOR), '（名前を選ぶ）');
+		toggleNewAuthor();
+	}
+
+	function toggleNewAuthor() {
+		var isNew = el.author.value === NEW_AUTHOR;
+		el.newAuthor.hidden = !isNew;
+		if (!isNew) { el.newAuthor.value = ''; }
+	}
+
+	/**
+	 * いま選ばれている（または入力された）名前。
+	 */
+	function currentAuthor() {
+		return (el.author.value === NEW_AUTHOR ? el.newAuthor.value : el.author.value).trim();
 	}
 
 	/**
@@ -258,7 +272,10 @@
 			node.addEventListener('input', saveDraft);
 		});
 		el.author.addEventListener('change', function () {
-			store(STORE_AUTHOR, el.author.value.trim());
+			toggleNewAuthor();
+			if (el.author.value !== NEW_AUTHOR) {
+				store(STORE_AUTHOR, el.author.value);
+			}
 		});
 		el.category.addEventListener('change', toggleNewCategory);
 		el.template.hidden = !myTemplate();
@@ -514,7 +531,7 @@
 		form.append('passphrase', pass);
 		form.append('title', el.title.value);
 		form.append('body', el.body.value);
-		form.append('author_name', el.author.value.trim());
+		form.append('author_name', currentAuthor());
 		form.append('category_id', el.category.value === NEW_CATEGORY ? '0' : el.category.value);
 		form.append('new_category', el.category.value === NEW_CATEGORY ? el.newCategory.value.trim() : '');
 		photos.forEach(function (photo) {
@@ -556,7 +573,13 @@
 	}
 
 	function onSuccess(data) {
-		store(STORE_AUTHOR, el.author.value.trim());
+		var name = currentAuthor();
+		store(STORE_AUTHOR, name);
+		// 新しく入れた名前は、その場で選択肢に足す。
+		if (name && (cfg.authors || []).indexOf(name) === -1) {
+			cfg.authors = (cfg.authors || []).concat([name]);
+		}
+		fillAuthors();
 		if (data.categories) {
 			cfg.categories = data.categories;
 			fillCategories();
@@ -640,7 +663,7 @@
 	/* ---------- 自分の投稿（生産者が自分の記事の状態を見る） ---------- */
 
 	function loadMyPosts() {
-		var name = el.author.value.trim();
+		var name = currentAuthor();
 		el.mineList.textContent = '';
 
 		if (!name) {
