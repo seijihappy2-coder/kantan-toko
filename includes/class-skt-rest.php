@@ -57,6 +57,16 @@ class SKT_Rest {
 
 		register_rest_route(
 			self::NS,
+			'/my-status',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'handle_my_status' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/posts',
 			array(
 				'methods'             => 'POST',
@@ -286,6 +296,55 @@ class SKT_Rest {
 			return null; // 守るカテゴリの記事（農法の説明など）もさわらせない。
 		}
 		return $post;
+	}
+
+	/**
+	 * 自分が送った記事を、自分で公開する／下書きに戻す。
+	 *
+	 * 合言葉に加えて、記事に記録された名前と一致することを確かめる。
+	 * 生産者用の合言葉は全員で共有しているので、これは「取り違え」を防ぐための確認であって、
+	 * 厳密な本人確認ではない。他人の記事を操作させない目的には足りる。
+	 */
+	public static function handle_my_status( WP_REST_Request $request ) {
+		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
+			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
+		}
+		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
+		}
+
+		$post_id = (int) $request->get_param( 'post_id' );
+		$post    = self::editable_post( $post_id );
+		if ( ! $post ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
+		}
+
+		$author = sanitize_text_field( (string) $request->get_param( 'author_name' ) );
+		$owner  = (string) get_post_meta( $post_id, '_skt_author_name', true );
+		if ( '' === $author || $author !== $owner ) {
+			return new WP_REST_Response( array( 'message' => 'これはご自身の投稿ではないため、変更できません。' ), 403 );
+		}
+
+		$status = 'publish' === $request->get_param( 'status' ) ? 'publish' : 'draft';
+		$result = wp_update_post(
+			array(
+				'ID'          => $post_id,
+				'post_status' => $status,
+			),
+			true
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'ok'      => true,
+				'message' => 'publish' === $status ? 'ブログに公開しました。' : '下書きに戻しました。',
+			),
+			200
+		);
 	}
 
 	/* ---------- 管理モード（公開・非公開の切り替え） ---------- */

@@ -725,8 +725,40 @@
 				row.appendChild(view);
 			}
 
+			row.appendChild(buildMyToggle(post));
+
 			el.mineList.appendChild(row);
 		});
+	}
+
+	/**
+	 * 自分の記事を、自分で公開する／下書きに戻すボタン。
+	 */
+	function buildMyToggle(post) {
+		var isPublic = 'publish' === post.status;
+
+		var button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'skt-btn skt-btn-small ' + (isPublic ? 'skt-btn-ghost' : 'skt-btn-primary');
+		button.textContent = isPublic ? '下書きに戻す' : '公開する';
+
+		button.addEventListener('click', function () {
+			if (isPublic && !window.confirm('この記事をブログから下げます。よろしいですか？')) { return; }
+			button.disabled = true;
+
+			api(cfg.myStatusUrl, {
+				post_id: post.id,
+				author_name: currentAuthor(),
+				status: isPublic ? 'draft' : 'publish'
+			}).then(function () {
+				loadMyPosts();
+			}).catch(function (error) {
+				button.disabled = false;
+				el.mineList.appendChild(note(error.message));
+			});
+		});
+
+		return button;
 	}
 
 	/* ---------- ギャラリーに出す写真 ---------- */

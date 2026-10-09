@@ -92,6 +92,8 @@ class SKT_Frontend {
 			'categoryUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/category' ) ),
 			'galleryUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/gallery' ) ),
 			'myPostsUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/my-posts' ) ),
+			'myStatusUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/my-status' ) ),
+			'publishesNow'    => 'publish' === $settings['post_status'],
 			'categories'      => self::categories(),
 			'authors'         => SKT_Settings::author_names(),
 			'defaultCategory' => (int) $settings['default_category'],
@@ -190,13 +192,13 @@ class SKT_Frontend {
 		<button type="submit" id="skt-submit" class="skt-btn skt-btn-primary skt-btn-send">送信する</button>
 		<p id="skt-form-error" class="skt-error" hidden></p>
 		<?php if ( 'publish' !== $settings['post_status'] ) : ?>
-		<p class="skt-note skt-foot">送信した記事は担当者が確認してから公開されます。</p>
+		<p class="skt-note skt-foot">送信すると下書きとして保存されます。下の「自分の投稿」で見て、よければ「公開する」を押してください。</p>
 		<?php endif; ?>
 	</form>
 
 	<details id="skt-mine" class="skt-card skt-help" hidden>
 		<summary class="skt-summary">自分の投稿</summary>
-		<p class="skt-note">名前を選ぶと、その名前で送った記事の今の状態が出ます。</p>
+		<p class="skt-note">名前を選ぶと、その名前で送った記事が出ます。「見る」で確かめて、「公開する」でブログにのせられます。</p>
 		<div id="skt-mine-list"></div>
 	</details>
 
@@ -229,7 +231,7 @@ class SKT_Frontend {
 
 			<?php if ( 'publish' !== $settings['post_status'] ) : ?>
 			<dt>送ったのにブログに出ない</dt>
-			<dd>すぐには出ません。担当者が確認してから公開します。</dd>
+			<dd>送っただけでは出ません。「自分の投稿」を開いて、「見る」で確かめてから「公開する」を押してください。</dd>
 			<?php endif; ?>
 
 			<?php if ( ! empty( $settings['help_contact'] ) ) : ?>
