@@ -99,6 +99,7 @@ class SKT_Frontend {
 			'defaultCategory' => (int) $settings['default_category'],
 			'maxPhotos'       => (int) $settings['max_photos'],
 			'needsSetup'      => empty( $settings['passphrase_hash'] ),
+			'authedRole'      => SKT_Settings::role_from_cookie(),
 			'template'        => (string) $settings['template'],
 			'today'           => wp_date( 'n月j日(D)' ),
 			'siteName'        => get_bloginfo( 'name' ),

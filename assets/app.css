@@ -12,6 +12,9 @@
 
 * { box-sizing: border-box; }
 
+/* display を指定した要素でも hidden が効くようにする（JSでの表示切替が効かなくなるため） */
+[hidden] { display: none !important; }
+
 body {
 	margin: 0;
 	background: var(--skt-bg);

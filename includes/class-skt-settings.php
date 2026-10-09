@@ -226,6 +226,67 @@ class SKT_Settings {
 		return is_wp_error( $term ) ? 0 : (int) $term['term_id'];
 	}
 
+	/* ---------- 合言葉を覚えておくCookie ---------- */
+
+	/** Cookieの名前 */
+	const COOKIE = 'skt_auth';
+
+	/** 覚えておく期間 */
+	const COOKIE_DAYS = 180;
+
+	/**
+	 * Cookieに入れる合図。合言葉そのものは入れない。
+	 * 合言葉を変えるとハッシュが変わるので、古いCookieは自動的に無効になる。
+	 */
+	private static function token( $role ) {
+		$hash = self::get( 'admin' === $role ? 'admin_passphrase_hash' : 'passphrase_hash' );
+		if ( empty( $hash ) ) {
+			return '';
+		}
+		return hash_hmac( 'sha256', $role . '|' . $hash, wp_salt( 'auth' ) );
+	}
+
+	/**
+	 * 合言葉が合っていたら、その端末に覚えさせる。
+	 */
+	public static function remember_role( $role ) {
+		$token = self::token( $role );
+		if ( '' === $token || headers_sent() ) {
+			return;
+		}
+
+		setcookie(
+			self::COOKIE,
+			$role . ':' . $token,
+			array(
+				'expires'  => time() + self::COOKIE_DAYS * DAY_IN_SECONDS,
+				'path'     => wp_parse_url( home_url( '/' ), PHP_URL_PATH ),
+				'secure'   => is_ssl(),
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
+	}
+
+	/**
+	 * Cookieから役割を読む。合わなければ空。
+	 */
+	public static function role_from_cookie() {
+		if ( empty( $_COOKIE[ self::COOKIE ] ) ) {
+			return '';
+		}
+
+		$parts = explode( ':', sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ), 2 );
+		if ( count( $parts ) !== 2 ) {
+			return '';
+		}
+
+		$role = 'admin' === $parts[0] ? 'admin' : 'producer';
+		$token = self::token( $role );
+
+		return ( '' !== $token && hash_equals( $token, $parts[1] ) ) ? $role : '';
+	}
+
 	/**
 	 * 投稿ページのURL。
 	 */

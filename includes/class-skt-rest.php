@@ -137,13 +137,34 @@ class SKT_Rest {
 	}
 
 	/**
+	 * この人は誰か。合言葉が送られていればそれで、無ければCookieで判断する。
+	 * 合言葉が合っていたら、その端末に覚えさせる。
+	 *
+	 * @return string 'admin' | 'producer' | ''
+	 */
+	private static function role_of( WP_REST_Request $request ) {
+		$passphrase = (string) $request->get_param( 'passphrase' );
+
+		if ( '' !== $passphrase ) {
+			$role = SKT_Settings::role_for( $passphrase );
+			if ( '' !== $role ) {
+				SKT_Settings::remember_role( $role );
+				return $role;
+			}
+			return '';
+		}
+
+		return SKT_Settings::role_from_cookie();
+	}
+
+	/**
 	 * 合言葉だけを確かめる（ログイン画面用）。
 	 */
 	public static function handle_verify( WP_REST_Request $request ) {
 		if ( self::too_many( 'verify', self::VERIFY_LIMIT ) ) {
 			return new WP_REST_Response( array( 'message' => 'しばらく時間をおいてからお試しください。' ), 429 );
 		}
-		$role = SKT_Settings::role_for( $request->get_param( 'passphrase' ) );
+		$role = self::role_of( $request );
 		if ( '' === $role ) {
 			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
@@ -165,7 +186,7 @@ class SKT_Rest {
 		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
 			return new WP_REST_Response( array( 'message' => '短時間に送りすぎです。しばらく待ってからお試しください。' ), 429 );
 		}
-		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+		if ( '' === self::role_of( $request ) ) {
 			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。画面を再読み込みして入れ直してください。' ), 403 );
 		}
@@ -243,7 +264,7 @@ class SKT_Rest {
 		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
 			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
 		}
-		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+		if ( '' === self::role_of( $request ) ) {
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
 		}
 
@@ -309,7 +330,7 @@ class SKT_Rest {
 		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
 			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
 		}
-		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+		if ( '' === self::role_of( $request ) ) {
 			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
 		}
 
@@ -358,7 +379,7 @@ class SKT_Rest {
 		if ( self::too_many( 'manage', self::MANAGE_LIMIT ) ) {
 			return new WP_REST_Response( array( 'message' => '短時間に操作しすぎです。しばらく待ってからお試しください。' ), 429 );
 		}
-		if ( ! SKT_Settings::check_admin_passphrase( $request->get_param( 'passphrase' ) ) ) {
+		if ( 'admin' !== self::role_of( $request ) ) {
 			self::warn_on_failures();
 			return new WP_REST_Response( array( 'message' => '管理者用の合言葉が必要です。' ), 403 );
 		}

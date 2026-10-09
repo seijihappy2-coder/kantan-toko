@@ -136,11 +136,6 @@
 		}
 		box.querySelector('.skt-install-text').textContent = text;
 		box.hidden = false;
-
-		document.getElementById('skt-install-close').addEventListener('click', function () {
-			store(STORE_HINT, 'done');
-			box.hidden = true;
-		});
 	}
 
 	/* ---------- 画面の出し分け ---------- */
@@ -187,7 +182,12 @@
 		bind();
 		showInstallHint();
 
-		if (load(STORE_PASS)) {
+		// 端末が合言葉を忘れていても、サーバーが覚えていれば聞かない。
+		if (cfg.authedRole && !load(STORE_ROLE)) {
+			store(STORE_ROLE, cfg.authedRole);
+		}
+
+		if (load(STORE_PASS) || cfg.authedRole) {
 			el.tabs.hidden = !isAdmin();
 			show(el.form);
 		} else {
@@ -313,6 +313,10 @@
 			});
 		});
 		el.reload.addEventListener('click', loadPosts);
+		document.getElementById('skt-install-close').addEventListener('click', function () {
+			store(STORE_HINT, 'done');
+			document.getElementById('skt-install').hidden = true;
+		});
 		el.mine.addEventListener('toggle', function () {
 			if (el.mine.open) { loadMyPosts(); }
 		});
@@ -522,13 +526,13 @@
 		}
 
 		var pass = load(STORE_PASS);
-		if (!pass) {
+		if (!pass && !cfg.authedRole) {
 			show(el.login);
 			return;
 		}
 
 		var form = new FormData();
-		form.append('passphrase', pass);
+		if (pass) { form.append('passphrase', pass); }
 		form.append('title', el.title.value);
 		form.append('body', el.body.value);
 		form.append('author_name', currentAuthor());
@@ -605,7 +609,8 @@
 	 */
 	function api(url, fields) {
 		var form = new FormData();
-		form.append('passphrase', load(STORE_PASS) || '');
+		var pass = load(STORE_PASS);
+		if (pass) { form.append('passphrase', pass); }
 		Object.keys(fields || {}).forEach(function (key) {
 			form.append(key, fields[key]);
 		});
