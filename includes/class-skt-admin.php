@@ -239,7 +239,7 @@ class SKT_Admin {
 					<tr>
 						<th scope="row"><label for="skt-help-contact">困ったときの連絡先</label></th>
 						<td>
-							<input type="text" id="skt-help-contact" name="help_contact" class="regular-text" value="<?php echo esc_attr( $s['help_contact'] ); ?>" placeholder="例：事務局 鶴田（090-0000-0000）">
+							<input type="text" id="skt-help-contact" name="help_contact" class="regular-text" value="<?php echo esc_attr( $s['help_contact'] ); ?>" placeholder="例：事務局（000-0000-0000）">
 							<p class="description">投稿ページの「困ったときは」に表示します。空なら出ません。</p>
 						</td>
 					</tr>
@@ -275,7 +275,7 @@ class SKT_Admin {
 					<tr>
 						<th scope="row"><label for="skt-line-users">投稿できる人</label></th>
 						<td>
-							<textarea id="skt-line-users" name="line_allowed_users" rows="5" class="large-text" placeholder="Uxxxxxxxx,山田さん"><?php echo esc_textarea( $s['line_allowed_users'] ); ?></textarea>
+							<textarea id="skt-line-users" name="line_allowed_users" rows="5" class="large-text" placeholder="Uxxxxxxxx,ハウス担当"><?php echo esc_textarea( $s['line_allowed_users'] ); ?></textarea>
 							<p class="description">「LINEのユーザーID,名前」を1行ずつ。空にすると友だち全員が投稿できます。</p>
 						</td>
 					</tr>

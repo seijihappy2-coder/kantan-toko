@@ -155,7 +155,7 @@ class SKT_Frontend {
 
 		<label class="skt-label" for="skt-author">名前</label>
 		<p class="skt-note">はじめての方は入力してください。次からは候補に出ます。</p>
-		<input type="text" id="skt-author" class="skt-input" list="skt-author-list" autocomplete="off" placeholder="例：山田 太郎">
+		<input type="text" id="skt-author" class="skt-input" list="skt-author-list" autocomplete="off" placeholder="お名前を入れてください">
 		<datalist id="skt-author-list"></datalist>
 
 		<label class="skt-label" for="skt-category">カテゴリ</label>

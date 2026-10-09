@@ -1,10 +1,9 @@
 <?php
 /**
- * Plugin Name: 秀明ファーム茨木 かんたん投稿
- * Plugin URI:  https://xs905657.xsrv.jp/shumei-ibaraki/
+ * Plugin Name: かんたん投稿
  * Description: 生産者がスマホから写真と一言を送るだけでブログ記事（下書き）を作れる投稿フォームを追加します。LINE公式アカウントからの投稿にも対応。
- * Version:     1.7.0
- * Author:      秀明自然農法ファーム茨木
+ * Version:     1.7.1
+ * Author:      農場スタッフ
  * Text Domain: shumei-kantan-toko
  * License:     GPL-2.0-or-later
  */
@@ -13,7 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SKT_VERSION', '1.7.0' );
+define( 'SKT_VERSION', '1.7.1' );
+
+/**
+ * 初めて有効化したときに、守るカテゴリとして自動で指定する名前。
+ * このサイト固有の値。使う農場に合わせて書き換える（空にすれば何も指定しない）。
+ */
+define( 'SKT_PROTECT_BY_DEFAULT', '秀明自然農法とは' );
 define( 'SKT_FILE', __FILE__ );
 define( 'SKT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SKT_URL', plugin_dir_url( __FILE__ ) );
@@ -48,7 +53,7 @@ function skt_activate() {
 	// 農法の説明記事は生産者の日常投稿とは別もの。初回だけ既定で守る対象にする。
 	$saved = get_option( SKT_Settings::OPTION, array() );
 	if ( ! is_array( $saved ) || ! array_key_exists( 'protected_categories', $saved ) ) {
-		$term = get_term_by( 'name', '秀明自然農法とは', 'category' );
+		$term = get_term_by( 'name', SKT_PROTECT_BY_DEFAULT, 'category' );
 		SKT_Settings::update( array( 'protected_categories' => $term ? array( (int) $term->term_id ) : array() ) );
 	}
 	SKT_Frontend::add_rewrite_rules();

@@ -131,8 +131,8 @@ LINE公式アカウントからの投稿にも対応しています（任意）�
 空のままだと、**友だち登録した人は誰でも投稿できます**。限定する場合は「投稿できる人」に
 
 ```
-Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,山田さん
-Uyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy,鈴木さん
+Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,ハウス担当
+Uyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy,田んぼ担当
 ```
 
 のように書きます。ユーザーIDは、その人が一度メッセージを送ったあと、
