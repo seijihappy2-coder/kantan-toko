@@ -265,6 +265,23 @@ class SKT_Rest {
 		return new WP_REST_Response( array( 'ok' => true, 'posts' => $items ), 200 );
 	}
 
+	/**
+	 * 触ってよい記事かどうか。
+	 *
+	 * 固定ページ（トップページ、秀明自然農法とは、お申込み など）はサイトの骨組みで、
+	 * 消えると表示が壊れる。このツールからは一切さわらせない。
+	 * 一覧に出さないだけでなく、ここで書き換えも止める。
+	 *
+	 * @return WP_Post|null 記事でなければ null。
+	 */
+	private static function editable_post( $post_id ) {
+		$post = get_post( (int) $post_id );
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return null;
+		}
+		return $post;
+	}
+
 	/* ---------- 管理モード（公開・非公開の切り替え） ---------- */
 
 	/**
@@ -349,10 +366,9 @@ class SKT_Rest {
 
 		$post_id = (int) $request->get_param( 'post_id' );
 		$status  = 'publish' === $request->get_param( 'status' ) ? 'publish' : 'draft';
-		$post    = get_post( $post_id );
 
-		if ( ! $post || 'post' !== $post->post_type ) {
-			return new WP_REST_Response( array( 'message' => '記事が見つかりませんでした。' ), 404 );
+		if ( ! self::editable_post( $post_id ) ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
 		}
 
 		$result = wp_update_post(
@@ -410,10 +426,9 @@ class SKT_Rest {
 		}
 
 		$post_id = (int) $request->get_param( 'post_id' );
-		$post    = get_post( $post_id );
 
-		if ( ! $post || 'post' !== $post->post_type ) {
-			return new WP_REST_Response( array( 'message' => '記事が見つかりませんでした。' ), 404 );
+		if ( ! self::editable_post( $post_id ) ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は削除できません。' ), 404 );
 		}
 
 		if ( ! wp_trash_post( $post_id ) ) {
