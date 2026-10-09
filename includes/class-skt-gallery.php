@@ -27,59 +27,100 @@ class SKT_Gallery {
 	 * @return array
 	 */
 	public static function photos( $limit = 200, $include_hidden = false ) {
-		$post_ids = get_posts(
+		$posts = get_posts(
 			array(
 				'post_type'   => 'post',
 				'post_status' => 'publish',
 				'numberposts' => 200,
-				'fields'      => 'ids',
-				'meta_key'    => '_skt_source', // phpcs:ignore WordPress.DB.SlowDBQuery
+				'orderby'     => 'date',
+				'order'       => 'DESC',
 			)
 		);
 
-		if ( empty( $post_ids ) ) {
+		if ( empty( $posts ) ) {
 			return array();
 		}
 
-		$args = array(
-			'post_type'       => 'attachment',
-			'post_mime_type'  => 'image',
-			'post_status'     => 'inherit',
-			'post_parent__in' => $post_ids,
-			'numberposts'     => (int) $limit,
-			'orderby'         => 'date',
-			'order'           => 'DESC',
-		);
-
-		if ( ! $include_hidden ) {
-			$args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery
-				array(
-					'key'     => self::HIDDEN_META,
-					'compare' => 'NOT EXISTS',
-				),
-			);
+		// 写真 → それが載っている記事。アイキャッチ画像と、記事に添付された画像の両方を拾う。
+		$owner = array();
+		foreach ( $posts as $post ) {
+			$thumb_id = get_post_thumbnail_id( $post->ID );
+			if ( $thumb_id ) {
+				$owner[ (int) $thumb_id ] = $post;
+			}
 		}
 
+		$attached = get_posts(
+			array(
+				'post_type'       => 'attachment',
+				'post_mime_type'  => 'image',
+				'post_status'     => 'inherit',
+				'post_parent__in' => wp_list_pluck( $posts, 'ID' ),
+				'numberposts'     => 500,
+			)
+		);
+
+		$by_id = array();
+		foreach ( $attached as $attachment ) {
+			$by_id[ (int) $attachment->ID ] = $attachment;
+			if ( ! isset( $owner[ (int) $attachment->ID ] ) ) {
+				$owner[ (int) $attachment->ID ] = get_post( $attachment->post_parent );
+			}
+		}
+
+		// アイキャッチは記事に添付されていないことが多いので、足りない分をまとめて取る。
+		$missing = array_diff( array_keys( $owner ), array_keys( $by_id ) );
+		if ( ! empty( $missing ) ) {
+			foreach ( get_posts(
+				array(
+					'post_type'      => 'attachment',
+					'post_mime_type' => 'image',
+					'post_status'    => 'inherit',
+					'post__in'       => $missing,
+					'numberposts'    => count( $missing ),
+				)
+			) as $attachment ) {
+				$by_id[ (int) $attachment->ID ] = $attachment;
+			}
+		}
+
+		// 新しい写真から順に。
+		uasort(
+			$by_id,
+			function ( $a, $b ) {
+				return strcmp( $b->post_date, $a->post_date );
+			}
+		);
+
 		$photos = array();
-		foreach ( get_posts( $args ) as $attachment ) {
-			$thumb = wp_get_attachment_image_url( $attachment->ID, 'medium_large' );
-			$full  = wp_get_attachment_image_url( $attachment->ID, 'large' );
-			if ( ! $thumb ) {
+		foreach ( $by_id as $id => $attachment ) {
+			$is_hidden = '' !== (string) get_post_meta( $id, self::HIDDEN_META, true );
+			if ( $is_hidden && ! $include_hidden ) {
 				continue;
 			}
 
-			$parent = get_post( $attachment->post_parent );
+			$thumb = wp_get_attachment_image_url( $id, 'medium_large' );
+			if ( ! $thumb ) {
+				continue;
+			}
+			$full = wp_get_attachment_image_url( $id, 'large' );
+
+			$parent = isset( $owner[ $id ] ) ? $owner[ $id ] : null;
 
 			$photos[] = array(
-				'id'     => (int) $attachment->ID,
+				'id'     => (int) $id,
 				'thumb'  => $thumb,
 				'full'   => $full ? $full : $thumb,
 				'title'  => $parent ? $parent->post_title : '',
 				'date'   => $parent ? get_the_date( 'Y年n月j日', $parent ) : '',
 				'link'   => $parent ? get_permalink( $parent ) : '',
 				'author' => $parent ? (string) get_post_meta( $parent->ID, '_skt_author_name', true ) : '',
-				'hidden' => '' !== (string) get_post_meta( $attachment->ID, self::HIDDEN_META, true ),
+				'hidden' => $is_hidden,
 			);
+
+			if ( count( $photos ) >= (int) $limit ) {
+				break;
+			}
 		}
 
 		return $photos;
@@ -116,7 +157,7 @@ class SKT_Gallery {
 
 		$photos = self::photos( (int) $atts['limit'] );
 		if ( empty( $photos ) ) {
-			return '<p>まだ写真がありません。</p>';
+			return '<p>公開中の記事に写真がありません。記事を公開すると、その写真がここに並びます。</p>';
 		}
 
 		$columns = max( 2, min( 6, (int) $atts['columns'] ) );
