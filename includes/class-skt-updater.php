@@ -19,10 +19,48 @@ class SKT_Updater {
 	const CACHE_KEY = 'skt_latest_release';
 	const CACHE_TTL = HOUR_IN_SECONDS;
 
+	/** 1時間ごとに様子を見るための印 */
+	const POLL_HOOK = 'skt_update_poll';
+
 	public static function init() {
 		add_filter( 'site_transient_update_plugins', array( __CLASS__, 'check' ) );
 		add_filter( 'plugins_api', array( __CLASS__, 'info' ), 10, 3 );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'forget' ), 10, 0 );
+
+		// WordPress は自動更新を1日2回しか実行しない。待たされるので1時間ごとに様子を見る。
+		add_action( self::POLL_HOOK, array( __CLASS__, 'poll' ) );
+		if ( ! wp_next_scheduled( self::POLL_HOOK ) ) {
+			wp_schedule_event( time() + 300, 'hourly', self::POLL_HOOK );
+		}
+	}
+
+	/**
+	 * 新しい版が出ていないか調べ、出ていれば自動更新をその場で走らせる。
+	 * 自動更新を有効にしていない場合は、更新があることを知らせるだけで何もしない。
+	 */
+	public static function poll() {
+		delete_transient( self::CACHE_KEY );
+		wp_update_plugins();
+
+		$updates = get_site_transient( 'update_plugins' );
+		if ( ! is_object( $updates ) || empty( $updates->response[ self::basename() ] ) ) {
+			return; // 新しい版は無い。
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/update.php';
+		if ( function_exists( 'wp_maybe_auto_update' ) ) {
+			wp_maybe_auto_update();
+		}
+	}
+
+	/**
+	 * 片付け（プラグインを止めたとき）。
+	 */
+	public static function unschedule() {
+		$next = wp_next_scheduled( self::POLL_HOOK );
+		if ( $next ) {
+			wp_unschedule_event( $next, self::POLL_HOOK );
+		}
 	}
 
 	/**
