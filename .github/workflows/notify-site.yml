@@ -1,0 +1,40 @@
+name: サイトに新しい版を知らせる
+
+# リリースを公開したら、導入先サイトの窓口に合図を送って即時更新させる。
+# 使うには、このリポジトリの Settings → Secrets and variables → Actions に
+#   DEPLOY_URL    … WordPress管理画面「かんたん投稿」に出ている窓口のアドレス
+#   DEPLOY_SECRET … 同じ画面に入れた、合図用の秘密の文字列
+# を登録する。未登録なら何もせず終わる。
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 合図を送る
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -z "$DEPLOY_URL" ] || [ -z "$DEPLOY_SECRET" ]; then
+            echo "DEPLOY_URL か DEPLOY_SECRET が未設定のため、何もしません。"
+            exit 0
+          fi
+
+          BODY=$(printf '{"tag":"%s","time":%s}' "${TAG:-manual}" "$(date +%s)")
+          SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -r | cut -d' ' -f1)
+
+          CODE=$(curl -sS -o /tmp/res.json -w '%{http_code}' -X POST "$DEPLOY_URL" \
+            -H 'Content-Type: application/json' \
+            -H "X-KT-Signature: sha256=$SIG" \
+            --data "$BODY" --max-time 120)
+
+          echo "応答 $CODE"
+          cat /tmp/res.json || true
+          echo
+          [ "$CODE" = "200" ]

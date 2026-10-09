@@ -38,6 +38,7 @@ require_once SKT_PATH . 'includes/class-skt-gallery.php';
 require_once SKT_PATH . 'includes/class-skt-line.php';
 require_once SKT_PATH . 'includes/class-skt-admin.php';
 require_once SKT_PATH . 'includes/class-skt-updater.php';
+require_once SKT_PATH . 'includes/class-skt-deploy.php';
 
 /**
  * 起動。
@@ -49,6 +50,7 @@ function skt_bootstrap() {
 	SKT_Content::init();
 	SKT_Admin::init();
 	SKT_Updater::init();
+	SKT_Deploy::init();
 }
 add_action( 'plugins_loaded', 'skt_bootstrap' );
 

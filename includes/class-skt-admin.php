@@ -67,6 +67,7 @@ class SKT_Admin {
 				'template'            => sanitize_textarea_field( wp_unslash( $_POST['template'] ?? '' ) ),
 				'help_contact'        => sanitize_text_field( wp_unslash( $_POST['help_contact'] ?? '' ) ),
 				'video_url'           => esc_url_raw( wp_unslash( $_POST['video_url'] ?? '' ) ),
+				'deploy_secret'       => sanitize_text_field( wp_unslash( $_POST['deploy_secret'] ?? '' ) ),
 				'link_label'          => sanitize_text_field( wp_unslash( $_POST['link_label'] ?? '' ) ),
 				'link_url'            => esc_url_raw( wp_unslash( $_POST['link_url'] ?? '' ) ),
 				'video_heading'       => sanitize_text_field( wp_unslash( $_POST['video_heading'] ?? '' ) ),
@@ -336,6 +337,26 @@ class SKT_Admin {
 					<tr>
 						<th scope="row"><label for="skt-line-category">LINE投稿のカテゴリ</label></th>
 						<td><?php self::category_select( 'line_category', (int) $s['line_category'], $categories ); ?></td>
+					</tr>
+				</table>
+
+				<h2>新しい版が出たらすぐ更新する（任意）</h2>
+				<p class="description">
+					配布元（GitHub）から合図を受け取って、その場で更新します。設定しなければ、
+					1時間ごとの確認で入ります。
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="skt-deploy-secret">合図用の秘密の文字列</label></th>
+						<td>
+							<input type="text" id="skt-deploy-secret" name="deploy_secret" class="regular-text" autocomplete="off" value="<?php echo esc_attr( $s['deploy_secret'] ); ?>" placeholder="英数字で32文字くらい">
+							<p class="description">
+								同じ文字列を配布元のGitHubにも登録します（Settings → Secrets → <code>DEPLOY_SECRET</code>）。<br>
+								GitHubに登録する窓口のアドレス（<code>DEPLOY_URL</code>）はこちらです：<br>
+								<code><?php echo esc_html( SKT_Deploy::url() ); ?></code>
+							</p>
+							<p class="description">空にすると窓口を閉じます。</p>
+						</td>
 					</tr>
 				</table>
 
