@@ -9,6 +9,7 @@
 	var STORE_ROLE = 'skt_role';
 	var STORE_AUTHOR = 'skt_author';
 	var STORE_DRAFT = 'skt_draft';
+	var STORE_TPL = 'skt_tpl';
 	var NEW_CATEGORY = '__new__';
 
 	var photos = []; // { blob, url, name }
@@ -46,6 +47,7 @@
 		body: document.getElementById('skt-body'),
 		submit: document.getElementById('skt-submit'),
 		template: document.getElementById('skt-template'),
+		templateSave: document.getElementById('skt-template-save'),
 		again: document.getElementById('skt-again'),
 		max: document.getElementById('skt-max')
 	};
@@ -68,6 +70,25 @@
 		} catch (e) {
 			return null;
 		}
+	}
+
+	/**
+	 * 自分の定型文があればそれ、なければ共通の雛形。
+	 */
+	function myTemplate() {
+		return load(STORE_TPL) || cfg.template || '';
+	}
+
+	/**
+	 * ボタンの文字を一瞬だけ変えて、押せたことを知らせる。
+	 */
+	function flash(button, message) {
+		var original = button.dataset.label || button.textContent;
+		button.dataset.label = original;
+		button.textContent = message;
+		window.setTimeout(function () {
+			button.textContent = original;
+		}, 2000);
 	}
 
 	/* ---------- 画面の出し分け ---------- */
@@ -186,12 +207,22 @@
 			store(STORE_AUTHOR, el.author.value.trim());
 		});
 		el.category.addEventListener('change', toggleNewCategory);
-		el.template.hidden = !cfg.template;
+		el.template.hidden = !myTemplate();
+		el.templateSave.hidden = el.template.hidden;
 		el.template.addEventListener('click', function () {
+			// {日付} は今日の日付に差し替えて入れる。
+			var text = myTemplate().split('{日付}').join(cfg.today || '');
 			var current = el.body.value.trim();
-			el.body.value = current ? current + '\n\n' + cfg.template : cfg.template;
+			el.body.value = current ? current + '\n\n' + text : text;
 			saveDraft();
 			el.body.focus();
+		});
+		el.templateSave.addEventListener('click', function () {
+			var current = el.body.value.trim();
+			// 今日の日付は {日付} に戻して覚える。空なら共通の雛形に戻す。
+			store(STORE_TPL, current ? current.split(cfg.today || '\u0000').join('{日付}') : null);
+			el.template.hidden = !myTemplate();
+			flash(el.templateSave, current ? '覚えました' : '共通に戻しました');
 		});
 		el.catAdd.addEventListener('click', function () {
 			var name = el.catNew.value.trim();

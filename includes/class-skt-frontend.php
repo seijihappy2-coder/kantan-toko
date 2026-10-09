@@ -92,7 +92,8 @@ class SKT_Frontend {
 			'defaultCategory' => (int) $settings['default_category'],
 			'maxPhotos'       => (int) $settings['max_photos'],
 			'needsSetup'      => empty( $settings['passphrase_hash'] ),
-			'template'        => str_replace( '{日付}', wp_date( 'n月j日(D)' ), (string) $settings['template'] ),
+			'template'        => (string) $settings['template'],
+			'today'           => wp_date( 'n月j日(D)' ),
 			'siteName'        => get_bloginfo( 'name' ),
 			'homeUrl'         => home_url( '/' ),
 		);
@@ -160,7 +161,10 @@ class SKT_Frontend {
 		<input type="text" id="skt-title" class="skt-input" placeholder="例：小松菜の収穫がはじまりました">
 
 		<label class="skt-label" for="skt-body">ひとこと</label>
-		<button type="button" id="skt-template" class="skt-btn skt-btn-small skt-btn-ghost skt-gap" hidden>定型文を入れる</button>
+		<div class="skt-item-actions skt-gap">
+			<button type="button" id="skt-template" class="skt-btn skt-btn-small skt-btn-ghost" hidden>定型文を入れる</button>
+			<button type="button" id="skt-template-save" class="skt-btn skt-btn-small skt-btn-ghost skt-btn-quiet" hidden>自分の定型文にする</button>
+		</div>
 		<textarea id="skt-body" class="skt-textarea" rows="6" placeholder="今日の畑のようす、味の感想、おすすめの食べ方など"></textarea>
 
 		<button type="submit" id="skt-submit" class="skt-btn skt-btn-primary skt-btn-send">送信する</button>
