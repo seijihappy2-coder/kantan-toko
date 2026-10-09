@@ -169,7 +169,9 @@ class SKT_Frontend {
 
 		<button type="submit" id="skt-submit" class="skt-btn skt-btn-primary skt-btn-send">送信する</button>
 		<p id="skt-form-error" class="skt-error" hidden></p>
+		<?php if ( 'publish' !== $settings['post_status'] ) : ?>
 		<p class="skt-note skt-foot">送信した記事は担当者が確認してから公開されます。</p>
+		<?php endif; ?>
 	</form>
 
 	<details id="skt-help" class="skt-card skt-help" hidden>
