@@ -17,7 +17,7 @@ class SKT_Updater {
 
 	/** 問い合わせ結果を覚えておく時間 */
 	const CACHE_KEY = 'skt_latest_release';
-	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
+	const CACHE_TTL = HOUR_IN_SECONDS;
 
 	public static function init() {
 		add_filter( 'site_transient_update_plugins', array( __CLASS__, 'check' ) );
@@ -57,13 +57,13 @@ class SKT_Updater {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			set_transient( self::CACHE_KEY, 'none', HOUR_IN_SECONDS );
+			set_transient( self::CACHE_KEY, 'none', 15 * MINUTE_IN_SECONDS );
 			return null;
 		}
 
 		$release = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( empty( $release['tag_name'] ) ) {
-			set_transient( self::CACHE_KEY, 'none', HOUR_IN_SECONDS );
+			set_transient( self::CACHE_KEY, 'none', 15 * MINUTE_IN_SECONDS );
 			return null;
 		}
 
@@ -95,6 +95,11 @@ class SKT_Updater {
 	public static function check( $transient ) {
 		if ( ! is_object( $transient ) || empty( $transient->checked ) ) {
 			return $transient;
+		}
+
+		// 管理画面の「もう一度確認」を押したときは、覚えている情報を捨ててから調べ直す。
+		if ( ! empty( $_GET['force-check'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			delete_transient( self::CACHE_KEY );
 		}
 
 		$latest = self::latest();
