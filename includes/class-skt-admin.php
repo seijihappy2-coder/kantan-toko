@@ -231,11 +231,13 @@ class SKT_Admin {
 						<th scope="row"><label for="skt-author-id">記事の作成者</label></th>
 						<td>
 							<?php
+							// 購読者や申込者まで並ぶと選びにくいので、記事を持てる権限の人だけ出す。
 							wp_dropdown_users(
 								array(
 									'name'     => 'post_author_id',
 									'id'       => 'skt-author-id',
 									'selected' => (int) $s['post_author_id'],
+									'role__in' => array( 'administrator', 'editor', 'author', 'contributor' ),
 								)
 							);
 							?>
