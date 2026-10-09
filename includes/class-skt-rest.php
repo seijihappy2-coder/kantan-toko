@@ -87,6 +87,16 @@ class SKT_Rest {
 
 		register_rest_route(
 			self::NS,
+			'/gallery',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'handle_gallery' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/trash',
 			array(
 				'methods'             => 'POST',
@@ -430,6 +440,29 @@ class SKT_Rest {
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * ギャラリーの写真一覧と、出す／隠すの切り替え。
+	 */
+	public static function handle_gallery( WP_REST_Request $request ) {
+		$denied = self::deny_unless_admin( $request );
+		if ( $denied ) {
+			return $denied;
+		}
+
+		$id = (int) $request->get_param( 'id' );
+		if ( $id && ! SKT_Gallery::set_hidden( $id, (int) $request->get_param( 'hidden' ) ) ) {
+			return new WP_REST_Response( array( 'message' => '写真が見つかりませんでした。' ), 404 );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'ok'     => true,
+				'photos' => SKT_Gallery::photos( 120, true ),
+			),
+			200
+		);
 	}
 
 	/**

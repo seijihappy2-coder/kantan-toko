@@ -87,6 +87,7 @@ class SKT_Frontend {
 			'updateUrl'       => esc_url_raw( rest_url( SKT_Rest::NS . '/update' ) ),
 			'trashUrl'        => esc_url_raw( rest_url( SKT_Rest::NS . '/trash' ) ),
 			'categoryUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/category' ) ),
+			'galleryUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/gallery' ) ),
 			'categories'      => self::categories(),
 			'authors'         => SKT_Settings::author_names(),
 			'defaultCategory' => (int) $settings['default_category'],
@@ -225,6 +226,12 @@ class SKT_Frontend {
 				<input type="text" id="skt-cat-new" class="skt-input" placeholder="新しいカテゴリの名前">
 				<button type="button" id="skt-cat-add" class="skt-btn skt-btn-small skt-btn-primary">追加</button>
 			</div>
+		</details>
+
+		<details id="skt-gal" class="skt-item">
+			<summary class="skt-summary">ギャラリーの写真</summary>
+			<p class="skt-note">写真を押すと、ギャラリーに出す／隠すが切り替わります。薄い写真は隠れています。</p>
+			<div id="skt-gal-grid" class="skt-gal-admin"></div>
 		</details>
 
 		<div id="skt-list" class="skt-list"></div>

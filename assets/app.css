@@ -426,3 +426,31 @@ body {
 	color: var(--skt-muted);
 	font-size: 15px;
 }
+
+.skt-gal-admin {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.skt-gal-cell-admin {
+	padding: 0;
+	border: 0;
+	background: #eceae4;
+	border-radius: 6px;
+	overflow: hidden;
+	aspect-ratio: 1 / 1;
+	cursor: pointer;
+}
+
+.skt-gal-cell-admin img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.skt-gal-cell-admin.is-hidden img { opacity: 0.25; }
+
+.skt-gal-cell-admin:disabled { opacity: 0.5; }

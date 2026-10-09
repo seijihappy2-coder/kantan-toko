@@ -44,6 +44,8 @@
 		catList: document.getElementById('skt-cat-list'),
 		catNew: document.getElementById('skt-cat-new'),
 		catAdd: document.getElementById('skt-cat-add'),
+		gal: document.getElementById('skt-gal'),
+		galGrid: document.getElementById('skt-gal-grid'),
 		title: document.getElementById('skt-title'),
 		body: document.getElementById('skt-body'),
 		submit: document.getElementById('skt-submit'),
@@ -244,6 +246,9 @@
 			});
 		});
 		el.reload.addEventListener('click', loadPosts);
+		el.gal.addEventListener('toggle', function () {
+			if (el.gal.open) { loadGallery(); }
+		});
 	}
 
 	/* ---------- 合言葉 ---------- */
@@ -575,6 +580,49 @@
 		p.className = 'skt-note';
 		p.textContent = text;
 		return p;
+	}
+
+	/* ---------- ギャラリーに出す写真 ---------- */
+
+	function loadGallery() {
+		galleryOp({});
+	}
+
+	function galleryOp(fields) {
+		return api(cfg.galleryUrl, fields)
+			.then(function (data) {
+				renderGallery(data.photos || []);
+			})
+			.catch(function (error) {
+				toast(error.message, true);
+			});
+	}
+
+	function renderGallery(photos) {
+		el.galGrid.textContent = '';
+		if (!photos.length) {
+			el.galGrid.appendChild(note('公開中の記事の写真がここに並びます。'));
+			return;
+		}
+		photos.forEach(function (photo) {
+			var cell = document.createElement('button');
+			cell.type = 'button';
+			cell.className = 'skt-gal-cell-admin' + (photo.hidden ? ' is-hidden' : '');
+			cell.title = photo.hidden ? 'ギャラリーに出す' : 'ギャラリーから隠す';
+
+			var img = document.createElement('img');
+			img.src = photo.thumb;
+			img.alt = photo.title || '';
+			img.loading = 'lazy';
+			cell.appendChild(img);
+
+			cell.addEventListener('click', function () {
+				cell.disabled = true;
+				galleryOp({ id: photo.id, hidden: photo.hidden ? 0 : 1 });
+			});
+
+			el.galGrid.appendChild(cell);
+		});
 	}
 
 	/* ---------- カテゴリの整理 ---------- */
