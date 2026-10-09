@@ -125,6 +125,11 @@ class SKT_Frontend {
 		<p class="skt-sub"><?php echo esc_html( get_bloginfo( 'name' ) ); ?></p>
 	</header>
 
+	<div id="skt-install" class="skt-install" hidden>
+		<p class="skt-install-text"></p>
+		<button type="button" id="skt-install-close" class="skt-btn skt-btn-small skt-btn-ghost">閉じる</button>
+	</div>
+
 	<nav id="skt-tabs" class="skt-tabs" hidden>
 		<button type="button" class="skt-tab is-active" data-target="post">投稿する</button>
 		<button type="button" class="skt-tab" data-target="manage">確認・公開</button>
@@ -189,7 +194,8 @@ class SKT_Frontend {
 		<summary class="skt-summary">困ったときは</summary>
 		<dl class="skt-help-list">
 			<dt>またこのページを開きたい</dt>
-			<dd>ブラウザの共有ボタン（□に↑のマーク）から「ホーム画面に追加」を選ぶと、アイコンから開けます。</dd>
+			<dd>ホーム画面に追加しておくと、アイコンを押すだけで開けます。やり方は画面の上の緑色の案内に出ます。
+				LINEのメッセージから開いた場合は、先に「…」から「ブラウザで開く」を選んでください。</dd>
 
 			<dt>送信できない</dt>
 			<dd>電波の良い場所で、もう一度「送信する」を押してください。書いた文章は消えずに残っています。</dd>

@@ -10,6 +10,7 @@
 	var STORE_AUTHOR = 'skt_author';
 	var STORE_DRAFT = 'skt_draft';
 	var STORE_TPL = 'skt_tpl';
+	var STORE_HINT = 'skt_hint';
 	var NEW_CATEGORY = '__new__';
 
 	var photos = []; // { blob, url, name }
@@ -96,6 +97,45 @@
 		}, 2000);
 	}
 
+	/* ---------- ホーム画面への追加の案内 ---------- */
+
+	/**
+	 * ホーム画面から開いているなら案内しない。
+	 * LINE内ブラウザのときは「追加」ができないので、やり方が違うことを伝える。
+	 */
+	function showInstallHint() {
+		var box = document.getElementById('skt-install');
+		if (!box || load(STORE_HINT) === 'done') { return; }
+
+		var standalone = window.navigator.standalone === true ||
+			(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+		if (standalone) { return; }
+
+		var ua = navigator.userAgent || '';
+		var text;
+
+		if (/Line\//i.test(ua)) {
+			text = 'いまLINEの中で開いています。右下（iPhoneは右上）の「…」から「ブラウザで開く」を選ぶと、' +
+				'ホーム画面に追加できるようになります。';
+		} else if (/iPhone|iPad|iPod/i.test(ua)) {
+			text = '画面の下にある「共有」（□に↑のしるし）を押して、少し下にスクロールし、' +
+				'「ホーム画面に追加」を選んでください。次からアイコンを押すだけで開けます。';
+		} else if (/Android/i.test(ua)) {
+			text = '画面の右上の「︙」を押して、「ホーム画面に追加」（または「アプリをインストール」）を' +
+				'選んでください。次からアイコンを押すだけで開けます。';
+		} else {
+			return; // パソコンでは案内しない。
+		}
+
+		box.querySelector('.skt-install-text').textContent = text;
+		box.hidden = false;
+
+		document.getElementById('skt-install-close').addEventListener('click', function () {
+			store(STORE_HINT, 'done');
+			box.hidden = true;
+		});
+	}
+
 	/* ---------- 画面の出し分け ---------- */
 
 	function show(section) {
@@ -138,6 +178,7 @@
 
 		restoreDraft();
 		bind();
+		showInstallHint();
 
 		if (load(STORE_PASS)) {
 			el.tabs.hidden = !isAdmin();

@@ -471,3 +471,23 @@ body {
 }
 
 .skt-mine-row .skt-item-meta { margin: 0; }
+
+.skt-install {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	margin-bottom: 14px;
+	background: #e7efe5;
+	border-radius: 12px;
+}
+
+.skt-install-text {
+	flex: 1;
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.7;
+	color: var(--skt-green-dark);
+}
+
+.skt-install .skt-btn { flex: 0 0 auto; min-height: 40px; padding: 6px 12px; }
