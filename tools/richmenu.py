@@ -53,14 +53,16 @@ def camera(draw, cx, cy, s, color):
 
 
 def leaf(draw, cx, cy, s, color):
-    """葉のしるし（細い楕円を斜めにして、中央に葉脈）"""
+    """葉のしるし（他と同じ線画）"""
     layer = Image.new("RGBA", (int(s * 4), int(s * 4)), (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
-    w, h = s * 1.0, s * 2.2
+    w, h = s * 1.15, s * 2.3
     c = s * 2
-    ld.ellipse([c - w / 2, c - h / 2, c + w / 2, c + h / 2], fill=color + (255,))
-    ld.line([c, c - h / 2 + s * 0.2, c, c + h / 2 - s * 0.2],
-            fill=WHITE + (255,), width=max(2, int(s * 0.09)))
+    line = max(3, int(s * 0.1))
+    ld.ellipse([c - w / 2, c - h / 2, c + w / 2, c + h / 2],
+               outline=color + (255,), width=line)
+    ld.line([c, c - h / 2 + s * 0.25, c, c + h / 2 - s * 0.25],
+            fill=color + (255,), width=line)
     layer = layer.rotate(-35, resample=Image.BICUBIC, center=(c, c))
     draw._image.paste(layer, (int(cx - c), int(cy - c)), layer)
 
@@ -123,3 +125,58 @@ if __name__ == "__main__":
         ],
     )
     print("wrote richmenu-3.png")
+
+
+def cover(path, w, h):
+    """写真を枠いっぱいに切り抜く"""
+    im = Image.open(path).convert("RGB")
+    s = max(w / im.width, h / im.height)
+    im = im.resize((max(1, int(im.width * s)), max(1, int(im.height * s))), Image.LANCZOS)
+    left = (im.width - w) // 2
+    top = (im.height - h) // 2
+    return im.crop((left, top, left + w, top + h))
+
+
+def build_photo(path, width, height, cells, labels):
+    """写真を背景にした版。文字が読めることを最優先に、下半分を暗くする。
+
+    labels: [(見出し, 補足, アイコン, 写真パス), ...]
+    """
+    cols, rows = cells
+    img = Image.new("RGB", (width, height), CREAM)
+    cw, ch = int(width / cols), int(height / rows)
+
+    for i, (title, sub, icon, photo) in enumerate(labels):
+        col, row = i % cols, i // cols
+        x0, y0 = col * cw, row * ch
+
+        cell = cover(photo, cw, ch)
+
+        # 下に行くほど濃くする幕。文字の下だけしっかり暗くする。
+        veil = Image.new("L", (1, ch))
+        for y in range(ch):
+            t = y / ch
+            veil.putpixel((0, y), int(60 + 150 * max(0.0, (t - 0.25) / 0.75) ** 1.4))
+        veil = veil.resize((cw, ch))
+        cell = Image.composite(Image.new("RGB", (cw, ch), (12, 20, 10)), cell, veil)
+
+        img.paste(cell, (x0, y0))
+
+        d = ImageDraw.Draw(img)
+        ICONS[icon](d, x0 + cw / 2, y0 + ch * 0.30, min(cw, ch) * 0.145, WHITE)
+
+        title_f = fit_font(d, title, cw * 0.80, int(ch * 0.21))
+        center_text(d, (x0, y0 + ch * 0.52, x0 + cw, y0 + ch * 0.74), title, title_f, WHITE)
+        if sub:
+            sub_f = fit_font(d, sub, cw * 0.78, int(ch * 0.115))
+            center_text(d, (x0, y0 + ch * 0.74, x0 + cw, y0 + ch * 0.90), sub, sub_f, (226, 232, 220))
+
+    # 枠の境目に細い線を入れて、押す場所を分かりやすくする。
+    d = ImageDraw.Draw(img)
+    for c in range(1, cols):
+        d.line([(c * cw, 0), (c * cw, height)], fill=WHITE, width=6)
+    for r in range(1, rows):
+        d.line([(0, r * ch), (width, r * ch)], fill=WHITE, width=6)
+
+    img.save(path, "PNG", optimize=True)
+    return path
