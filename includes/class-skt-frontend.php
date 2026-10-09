@@ -88,6 +88,7 @@ class SKT_Frontend {
 			'trashUrl'        => esc_url_raw( rest_url( SKT_Rest::NS . '/trash' ) ),
 			'categoryUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/category' ) ),
 			'galleryUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/gallery' ) ),
+			'myPostsUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/my-posts' ) ),
 			'categories'      => self::categories(),
 			'authors'         => SKT_Settings::author_names(),
 			'defaultCategory' => (int) $settings['default_category'],
@@ -174,6 +175,12 @@ class SKT_Frontend {
 		<p class="skt-note skt-foot">送信した記事は担当者が確認してから公開されます。</p>
 		<?php endif; ?>
 	</form>
+
+	<details id="skt-mine" class="skt-card skt-help" hidden>
+		<summary class="skt-summary">自分の投稿</summary>
+		<p class="skt-note">名前を選ぶと、その名前で送った記事の今の状態が出ます。</p>
+		<div id="skt-mine-list"></div>
+	</details>
 
 	<details id="skt-help" class="skt-card skt-help" hidden>
 		<summary class="skt-summary">困ったときは</summary>

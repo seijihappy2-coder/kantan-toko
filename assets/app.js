@@ -17,6 +17,8 @@
 	var el = {
 		tabs: document.getElementById('skt-tabs'),
 		help: document.getElementById('skt-help'),
+		mine: document.getElementById('skt-mine'),
+		mineList: document.getElementById('skt-mine-list'),
 		manage: document.getElementById('skt-manage'),
 		manageToast: document.getElementById('skt-manage-toast'),
 		list: document.getElementById('skt-list'),
@@ -101,6 +103,7 @@
 			if (node) { node.hidden = node !== section; }
 		});
 		el.help.hidden = section !== el.form;
+		el.mine.hidden = section !== el.form;
 		markTab(section === el.manage ? 'manage' : 'post');
 		window.scrollTo(0, 0);
 	}
@@ -246,6 +249,9 @@
 			});
 		});
 		el.reload.addEventListener('click', loadPosts);
+		el.mine.addEventListener('toggle', function () {
+			if (el.mine.open) { loadMyPosts(); }
+		});
 		el.gal.addEventListener('toggle', function () {
 			if (el.gal.open) { loadGallery(); }
 		});
@@ -515,6 +521,8 @@
 		el.body.value = '';
 		store(STORE_DRAFT, null);
 
+		if (el.mine.open) { loadMyPosts(); }
+
 		el.doneTitle.textContent = data.published ? '公開しました' : '送信しました';
 		el.doneText.textContent = data.message || '';
 		show(el.done);
@@ -580,6 +588,75 @@
 		p.className = 'skt-note';
 		p.textContent = text;
 		return p;
+	}
+
+	/* ---------- 自分の投稿（生産者が自分の記事の状態を見る） ---------- */
+
+	function loadMyPosts() {
+		var name = el.author.value.trim();
+		el.mineList.textContent = '';
+
+		if (!name) {
+			el.mineList.appendChild(note('先に上の「名前」を入れてください。'));
+			return;
+		}
+
+		el.mineList.appendChild(note('読み込んでいます…'));
+
+		api(cfg.myPostsUrl, { author_name: name })
+			.then(function (data) {
+				renderMyPosts(data.posts || []);
+			})
+			.catch(function (error) {
+				el.mineList.textContent = '';
+				el.mineList.appendChild(note(error.message));
+			});
+	}
+
+	function renderMyPosts(posts) {
+		el.mineList.textContent = '';
+
+		if (!posts.length) {
+			el.mineList.appendChild(note('この名前で送った記事はまだありません。'));
+			return;
+		}
+
+		posts.forEach(function (post) {
+			var row = document.createElement('div');
+			row.className = 'skt-mine-row';
+
+			var badge = document.createElement('span');
+			badge.className = 'skt-badge' + ('publish' === post.status ? ' is-public' : '');
+			badge.textContent = post.statusText;
+			row.appendChild(badge);
+
+			var texts = document.createElement('div');
+			texts.className = 'skt-mine-texts';
+
+			var title = document.createElement('div');
+			title.className = 'skt-mine-title';
+			title.textContent = post.title;
+			texts.appendChild(title);
+
+			var date = document.createElement('div');
+			date.className = 'skt-item-meta';
+			date.textContent = post.date;
+			texts.appendChild(date);
+
+			row.appendChild(texts);
+
+			if (post.link) {
+				var view = document.createElement('a');
+				view.className = 'skt-btn skt-btn-small skt-btn-ghost';
+				view.href = post.link;
+				view.target = '_blank';
+				view.rel = 'noopener';
+				view.textContent = '見る';
+				row.appendChild(view);
+			}
+
+			el.mineList.appendChild(row);
+		});
 	}
 
 	/* ---------- ギャラリーに出す写真 ---------- */

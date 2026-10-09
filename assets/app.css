@@ -454,3 +454,20 @@ body {
 .skt-gal-cell-admin.is-hidden img { opacity: 0.25; }
 
 .skt-gal-cell-admin:disabled { opacity: 0.5; }
+
+.skt-mine-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 0;
+	border-top: 1px solid var(--skt-border);
+}
+
+.skt-mine-texts { flex: 1; min-width: 0; }
+
+.skt-mine-title {
+	font-weight: 700;
+	line-height: 1.5;
+}
+
+.skt-mine-row .skt-item-meta { margin: 0; }

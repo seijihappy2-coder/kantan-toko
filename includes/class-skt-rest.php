@@ -47,6 +47,16 @@ class SKT_Rest {
 
 		register_rest_route(
 			self::NS,
+			'/my-posts',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'handle_my_posts' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/posts',
 			array(
 				'methods'             => 'POST',
@@ -212,6 +222,47 @@ class SKT_Rest {
 			),
 			200
 		);
+	}
+
+	/**
+	 * 自分が送った記事の状態を返す（生産者用・見るだけ）。
+	 */
+	public static function handle_my_posts( WP_REST_Request $request ) {
+		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
+			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
+		}
+		if ( '' === SKT_Settings::role_for( $request->get_param( 'passphrase' ) ) ) {
+			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
+		}
+
+		$author_name = sanitize_text_field( (string) $request->get_param( 'author_name' ) );
+		if ( '' === $author_name ) {
+			return new WP_REST_Response( array( 'ok' => true, 'posts' => array() ), 200 );
+		}
+
+		$posts = get_posts(
+			array(
+				'post_type'   => 'post',
+				'post_status' => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+				'numberposts' => 10,
+				'meta_key'    => '_skt_author_name', // phpcs:ignore WordPress.DB.SlowDBQuery
+				'meta_value'  => $author_name, // phpcs:ignore WordPress.DB.SlowDBQuery
+			)
+		);
+
+		$items = array();
+		foreach ( $posts as $post ) {
+			$items[] = array(
+				'id'         => (int) $post->ID,
+				'title'      => $post->post_title,
+				'status'     => $post->post_status,
+				'statusText' => self::status_text( $post->post_status ),
+				'date'       => get_the_date( 'n月j日 H:i', $post ),
+				'link'       => 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ),
+			);
+		}
+
+		return new WP_REST_Response( array( 'ok' => true, 'posts' => $items ), 200 );
 	}
 
 	/* ---------- 管理モード（公開・非公開の切り替え） ---------- */
