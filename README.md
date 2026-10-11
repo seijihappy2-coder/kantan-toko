@@ -338,3 +338,9 @@ kantan-toko/
     ├── app.css                   投稿ページの見た目
     └── app.js                    写真の縮小と送信
 ```
+
+## 改善記録・Obsidian・GitHub
+
+[運用ルール](docs/operation-rules.md)を原本として使います。[記録のひな形](records/templates/improvement.md)と[改善記録ページ](tools/improvement-log.html)を追加しました。
+
+記録ページはブラウザーで開き、課題・変更・結果をMDへ書き出せます。Obsidianでは同じMDを読み書きし、GitHubには公開範囲を確認した記録だけを保存します。MDを複製して二つの原本を並行編集しません。コードのプッシュとアプリのデータ同期は別です。既存の保存・バックアップ機能も続けて使ってください。
