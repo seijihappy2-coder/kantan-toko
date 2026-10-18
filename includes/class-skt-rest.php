@@ -25,6 +25,11 @@ class SKT_Rest {
 	}
 
 	public static function register_routes() {
+		register_rest_route( self::NS, '/my-update', array(
+			'methods' => 'POST',
+			'callback' => array( __CLASS__, 'handle_my_update' ),
+			'permission_callback' => '__return_true',
+		) );
 		register_rest_route(
 			self::NS,
 			'/verify',
@@ -258,7 +263,7 @@ class SKT_Rest {
 	}
 
 	/**
-	 * 自分が送った記事の状態を返す（生産者用・見るだけ）。
+	 * 自分が送った記事の状態と編集用の文章を返す。
 	 */
 	public static function handle_my_posts( WP_REST_Request $request ) {
 		if ( self::too_many( 'submit', self::SUBMIT_LIMIT ) ) {
@@ -288,11 +293,14 @@ class SKT_Rest {
 		foreach ( $posts as $post ) {
 			$items[] = array(
 				'id'         => (int) $post->ID,
+				'body'       => (string) get_post_meta( $post->ID, '_skt_body_text', true ),
+				'photos'     => self::post_photos( $post->ID ),
+				'editable'   => '' !== get_post_meta( $post->ID, '_skt_source', true ),
 				'title'      => $post->post_title,
 				'status'     => $post->post_status,
 				'statusText' => self::status_text( $post->post_status ),
 				'date'       => get_the_date( 'n月j日 H:i', $post ),
-				'link'       => 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ),
+				'link'       => 'publish' === $post->post_status ? get_permalink( $post ) : '',
 			);
 		}
 
@@ -368,6 +376,30 @@ class SKT_Rest {
 		);
 	}
 
+	/** 自分の投稿のタイトルと文章を書き直す。名前の照合は取り違え防止用。 */
+	public static function handle_my_update( WP_REST_Request $request ) {
+		if ( self::too_many( 'manage', self::MANAGE_LIMIT ) ) {
+			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
+		}
+		if ( '' === self::role_of( $request ) ) {
+			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
+		}
+		$post_id = (int) $request->get_param( 'post_id' );
+		$post = self::editable_post( $post_id );
+		if ( ! $post || ! in_array( $post->post_status, array( 'publish', 'draft', 'pending', 'private', 'future' ), true ) ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
+		}
+		$author = sanitize_text_field( (string) $request->get_param( 'author_name' ) );
+		if ( '' === $author || $author !== (string) get_post_meta( $post_id, '_skt_author_name', true ) ) {
+			return new WP_REST_Response( array( 'message' => 'これはご自身の投稿ではないため、変更できません。' ), 403 );
+		}
+		$result = self::update_post( $request );
+		if ( is_wp_error( $result ) ) {
+			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'message' => '書き直しました。' ), 200 );
+	}
+
 	/* ---------- 管理モード（公開・非公開の切り替え） ---------- */
 
 	/**
@@ -426,10 +458,11 @@ class SKT_Rest {
 				'thumb'      => $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium' ) : '',
 				'excerpt'    => mb_strimwidth( $body, 0, 120, '…' ),
 				'body'       => $body,
+				'photos'     => self::post_photos( $post->ID ),
 				'author'     => (string) get_post_meta( $post->ID, '_skt_author_name', true ),
 				'source'     => (string) get_post_meta( $post->ID, '_skt_source', true ),
 				'editable'   => '' !== get_post_meta( $post->ID, '_skt_source', true ),
-				'link'       => 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ),
+				'link'       => 'publish' === $post->post_status ? get_permalink( $post ) : '',
 			);
 		}
 
@@ -491,17 +524,78 @@ class SKT_Rest {
 			return $denied;
 		}
 
-		$result = SKT_Post_Creator::update_text(
-			(int) $request->get_param( 'post_id' ),
-			(string) $request->get_param( 'title' ),
-			(string) $request->get_param( 'body' )
-		);
+		if ( ! self::editable_post( (int) $request->get_param( 'post_id' ) ) ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
+		}
+		$result = self::update_post( $request );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 400 );
 		}
 
 		return new WP_REST_Response( array( 'ok' => true, 'message' => '書き直しました。' ), 200 );
+	}
+
+	/** 編集用の写真。この記事に保存された写真だけを返す。 */
+	private static function post_photos( $post_id ) {
+		$items = array();
+		foreach ( (array) get_post_meta( $post_id, '_skt_photo_ids', true ) as $id ) {
+			$url = wp_get_attachment_image_url( (int) $id, 'medium' );
+			if ( $url ) {
+				$items[] = array( 'id' => (int) $id, 'url' => $url );
+			}
+		}
+		return $items;
+	}
+
+	/** 認証と記事の照合を済ませてから呼ぶ、写真と文章の保存処理。 */
+	private static function update_post( WP_REST_Request $request ) {
+		$post_id = (int) $request->get_param( 'post_id' );
+		if ( '' === get_post_meta( $post_id, '_skt_source', true ) ) {
+			return new WP_Error( 'skt_not_editable', 'この記事はこのツールで作ったものではありません。' );
+		}
+		$order_raw = $request->get_param( 'photo_order' );
+		if ( null === $order_raw ) {
+			return SKT_Post_Creator::update_text( $post_id, (string) $request->get_param( 'title' ), (string) $request->get_param( 'body' ) );
+		}
+		$order = json_decode( (string) $order_raw, true );
+		$files = self::normalize_files( $request->get_file_params() );
+		$allowed = array_map( 'intval', (array) get_post_meta( $post_id, '_skt_photo_ids', true ) );
+		if ( ! is_array( $order ) || count( $order ) > (int) SKT_Settings::get( 'max_photos' ) || count( $order ) !== count( array_unique( $order, SORT_REGULAR ) ) ) {
+			return new WP_Error( 'skt_photos', '写真の枚数を確認して、もう一度お試しください。' );
+		}
+		$new_indexes = array();
+		foreach ( $order as $token ) {
+			if ( is_int( $token ) && in_array( $token, $allowed, true ) ) {
+				continue;
+			}
+			if ( is_string( $token ) && preg_match( '/^new:(0|[1-9][0-9]*)$/', $token, $match ) && isset( $files[ (int) $match[1] ] ) ) {
+				$new_indexes[] = (int) $match[1];
+				continue;
+			}
+			return new WP_Error( 'skt_photos', '写真を確認して、もう一度選び直してください。' );
+		}
+		if ( count( $new_indexes ) !== count( $files ) || ( empty( $order ) && '' === trim( (string) $request->get_param( 'body' ) ) ) ) {
+			return new WP_Error( 'skt_empty', '写真か文章を入れ、写真の選択を確認してください。' );
+		}
+		$uploaded = array();
+		foreach ( $files as $file ) {
+			$id = SKT_Media::sideload_uploaded_file( $file );
+			if ( is_wp_error( $id ) ) {
+				foreach ( $uploaded as $done ) { wp_delete_attachment( $done, true ); }
+				return $id;
+			}
+			$uploaded[] = $id;
+		}
+		$ids = array();
+		foreach ( $order as $token ) {
+			$ids[] = is_int( $token ) ? $token : $uploaded[ (int) substr( $token, 4 ) ];
+		}
+		$result = SKT_Post_Creator::update_text( $post_id, (string) $request->get_param( 'title' ), (string) $request->get_param( 'body' ), $ids );
+		if ( is_wp_error( $result ) ) {
+			foreach ( $uploaded as $done ) { wp_delete_attachment( $done, true ); }
+		}
+		return $result;
 	}
 
 	/**

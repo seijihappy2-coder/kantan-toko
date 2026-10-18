@@ -599,6 +599,21 @@
 
 		el.doneTitle.textContent = data.published ? '公開しました' : '送信しました';
 		el.doneText.textContent = data.message || '';
+		var review = document.getElementById('skt-review-submitted');
+		if (!review) {
+			review = document.createElement('button');
+			review.id = 'skt-review-submitted';
+			review.type = 'button';
+			review.className = 'skt-btn skt-btn-ghost';
+			el.done.appendChild(review);
+			review.addEventListener('click', function () {
+				show(el.form);
+				el.mine.open = true;
+				loadMyPosts();
+				el.mine.scrollIntoView({ block: 'start' });
+			});
+		}
+		review.textContent = data.published ? '自分の投稿を確認する' : '下書きを確認する';
 		show(el.done);
 	}
 
@@ -608,10 +623,10 @@
 	 * 合言葉を添えてサーバーに問い合わせる。
 	 */
 	function api(url, fields) {
-		var form = new FormData();
+		var form = fields instanceof FormData ? fields : new FormData();
 		var pass = load(STORE_PASS);
 		if (pass) { form.append('passphrase', pass); }
-		Object.keys(fields || {}).forEach(function (key) {
+		Object.keys(fields instanceof FormData ? {} : (fields || {})).forEach(function (key) {
 			form.append(key, fields[key]);
 		});
 
@@ -720,17 +735,19 @@
 
 			row.appendChild(texts);
 
-			if (post.link) {
-				var view = document.createElement('a');
-				view.className = 'skt-btn skt-btn-small skt-btn-ghost';
-				view.href = post.link;
-				view.target = '_blank';
-				view.rel = 'noopener';
-				view.textContent = '見る';
-				row.appendChild(view);
-			}
+			row.appendChild(buildView(post, row, currentAuthor()));
 
 			row.appendChild(buildMyToggle(post));
+			if (post.editable) {
+				var edit = document.createElement('button');
+				edit.type = 'button';
+				edit.className = 'skt-btn skt-btn-small skt-btn-ghost';
+				edit.textContent = '編集する';
+				edit.addEventListener('click', function () {
+					openEditor(post, row, currentAuthor());
+				});
+				row.appendChild(edit);
+			}
 
 			el.mineList.appendChild(row);
 		});
@@ -956,15 +973,7 @@
 		});
 		row.appendChild(toggle);
 
-		if (post.link) {
-			var view = document.createElement('a');
-			view.className = 'skt-btn skt-btn-small skt-btn-ghost';
-			view.href = post.link;
-			view.target = '_blank';
-			view.rel = 'noopener';
-			view.textContent = '見る';
-			row.appendChild(view);
-		}
+		row.appendChild(buildView(post, card));
 
 		if (post.editable) {
 			var edit = document.createElement('button');
@@ -999,10 +1008,84 @@
 		return row;
 	}
 
+	/** 下書きはログイン済みの投稿画面内で確認する。HTMLは実行しない。 */
+	function buildView(post, card, authorName) {
+		var published = post.status === 'publish';
+		var view = document.createElement(published ? 'a' : 'button');
+		view.className = 'skt-btn skt-btn-small skt-btn-ghost';
+		view.textContent = published ? 'ブログを表示' : 'プレビュー';
+		if (published) {
+			view.href = post.link;
+			view.target = '_blank';
+			view.rel = 'noopener';
+		} else {
+			view.type = 'button';
+			view.addEventListener('click', function () { openPreview(post, card, authorName); });
+		}
+		return view;
+	}
+
+	function openPreview(post, card, authorName) {
+		if (card.querySelector('.skt-preview')) { return; }
+		var panel = document.createElement('section');
+		panel.className = 'skt-preview';
+		panel.tabIndex = -1;
+		panel.setAttribute('aria-label', '記事のプレビュー');
+		panel.appendChild(note('公開前の確認です。ブログでは文字の大きさや余白が異なる場合があります。'));
+		var heading = document.createElement('h3');
+		heading.textContent = post.title;
+		panel.appendChild(heading);
+		var body = document.createElement('div');
+		body.className = 'skt-preview-body';
+		body.textContent = post.body || '';
+		panel.appendChild(body);
+		(post.photos || []).forEach(function (photo, index) {
+			var img = document.createElement('img');
+			img.src = photo.url;
+			img.alt = (index + 1) + '枚目の写真';
+			panel.appendChild(img);
+		});
+		var actions = document.createElement('div');
+		actions.className = 'skt-item-actions';
+		var close = document.createElement('button');
+		close.type = 'button';
+		close.className = 'skt-btn skt-btn-small skt-btn-ghost';
+		close.textContent = '閉じる';
+		close.addEventListener('click', function () { panel.remove(); });
+		actions.appendChild(close);
+		if (post.editable) {
+			var edit = document.createElement('button');
+			edit.type = 'button';
+			edit.className = 'skt-btn skt-btn-small skt-btn-ghost';
+			edit.textContent = '編集に戻る';
+			edit.addEventListener('click', function () { panel.remove(); openEditor(post, card, authorName); });
+			actions.appendChild(edit);
+		}
+		var publish = document.createElement('button');
+		publish.type = 'button';
+		publish.className = 'skt-btn skt-btn-small skt-btn-primary';
+		publish.textContent = '公開する';
+		var errorNote = note('');
+		errorNote.setAttribute('role', 'alert');
+		publish.addEventListener('click', function () {
+			publish.disabled = true;
+			var fields = { post_id: post.id, status: 'publish' };
+			if (authorName) { fields.author_name = authorName; }
+			api(authorName ? cfg.myStatusUrl : cfg.statusUrl, fields).then(function () {
+				if (authorName) { loadMyPosts(); } else { loadPosts(); }
+			}).catch(function (error) { publish.disabled = false; errorNote.textContent = error.message; });
+		});
+		actions.appendChild(publish);
+		panel.appendChild(actions);
+		panel.appendChild(errorNote);
+		card.appendChild(panel);
+		panel.focus();
+	}
+
 	/**
 	 * カードの中でタイトルと文章を直す。
 	 */
-	function openEditor(post, card) {
+	function openEditor(post, card, authorName) {
 		if (card.querySelector('.skt-editor')) { return; }
 
 		var editor = document.createElement('div');
@@ -1015,6 +1098,8 @@
 		titleInput.type = 'text';
 		titleInput.className = 'skt-input';
 		titleInput.value = post.title;
+		titleInput.id = 'skt-edit-title-' + (authorName ? 'mine-' : 'admin-') + post.id;
+		titleLabel.htmlFor = titleInput.id;
 
 		var bodyLabel = document.createElement('label');
 		bodyLabel.className = 'skt-label';
@@ -1023,6 +1108,84 @@
 		bodyInput.className = 'skt-textarea';
 		bodyInput.rows = 6;
 		bodyInput.value = post.body || '';
+		bodyInput.id = 'skt-edit-body-' + (authorName ? 'mine-' : 'admin-') + post.id;
+		bodyLabel.htmlFor = bodyInput.id;
+		var errorNote = note('');
+		errorNote.setAttribute('role', 'alert');
+
+		var editPhotos = (post.photos || []).map(function (photo) { return { id: photo.id, url: photo.url }; });
+		var photoBox = document.createElement('div');
+		photoBox.className = 'skt-edit-photos';
+		var addPhotos = document.createElement('input');
+		addPhotos.type = 'file';
+		addPhotos.accept = 'image/*';
+		addPhotos.multiple = true;
+		addPhotos.setAttribute('aria-label', '写真を追加する');
+		var processing = false;
+		function release(photo) { if (photo.blob) { URL.revokeObjectURL(photo.url); } }
+		function cleanup() { editPhotos.forEach(release); }
+		function renderEditPhotos() {
+			photoBox.textContent = '';
+			editPhotos.forEach(function (photo, index) {
+				var cell = document.createElement('div');
+				cell.className = 'skt-edit-photo';
+				var img = document.createElement('img');
+				img.src = photo.url;
+				img.alt = (index + 1) + '枚目の写真';
+				cell.appendChild(img);
+				var replace = document.createElement('input');
+				replace.type = 'file';
+				replace.accept = 'image/*';
+				replace.setAttribute('aria-label', (index + 1) + '枚目を差し替える');
+				replace.addEventListener('change', function () { selectPhotos(replace, index); });
+				var label = document.createElement('label');
+				label.textContent = '差し替える';
+				label.appendChild(replace);
+				cell.appendChild(label);
+				var remove = document.createElement('button');
+				remove.type = 'button';
+				remove.className = 'skt-btn skt-btn-small skt-btn-ghost';
+				remove.textContent = '取り外す';
+				remove.setAttribute('aria-label', (index + 1) + '枚目を取り外す');
+				remove.addEventListener('click', function () {
+					release(photo);
+					editPhotos.splice(index, 1);
+					renderEditPhotos();
+				});
+				cell.appendChild(remove);
+				photoBox.appendChild(cell);
+			});
+		}
+		function lockPhotos(locked) {
+			processing = locked;
+			save.disabled = locked;
+			cancel.disabled = locked;
+			addPhotos.disabled = locked;
+			Array.prototype.forEach.call(photoBox.querySelectorAll('input, button'), function (control) { control.disabled = locked; });
+		}
+		function selectPhotos(input, replaceIndex) {
+			var files = Array.prototype.slice.call(input.files || []);
+			input.value = '';
+			if (!files.length || processing) { return; }
+			if (replaceIndex === undefined && files.length + editPhotos.length > cfg.maxPhotos) {
+				errorNote.textContent = '写真は' + cfg.maxPhotos + '枚までです。先に不要な写真を取り外してください。';
+				return;
+			}
+			lockPhotos(true);
+			errorNote.textContent = '写真を準備しています…';
+			files.reduce(function (chain, file) {
+				return chain.then(function () { return shrink(file); }).then(function (photo) {
+					if (replaceIndex === undefined) { editPhotos.push(photo); }
+					else { release(editPhotos[replaceIndex]); editPhotos[replaceIndex] = photo; }
+				});
+			}, Promise.resolve()).then(function () {
+				errorNote.textContent = '';
+			}).catch(function () {
+				errorNote.textContent = '写真を準備できませんでした。もう一度選び直してください。';
+			}).then(function () { renderEditPhotos(); lockPhotos(false); });
+		}
+		addPhotos.addEventListener('change', function () { selectPhotos(addPhotos); });
+		renderEditPhotos();
 
 		var row = document.createElement('div');
 		row.className = 'skt-item-actions';
@@ -1032,15 +1195,33 @@
 		save.className = 'skt-btn skt-btn-small skt-btn-primary';
 		save.textContent = '保存する';
 		save.addEventListener('click', function () {
-			save.disabled = true;
-			api(cfg.updateUrl, { post_id: post.id, title: titleInput.value, body: bodyInput.value })
+			if (processing) { return; }
+			lockPhotos(true);
+			errorNote.textContent = '';
+			var fields = { post_id: post.id, title: titleInput.value, body: bodyInput.value };
+			if (authorName) { fields.author_name = authorName; }
+			var form = new FormData();
+			Object.keys(fields).forEach(function (key) { form.append(key, fields[key]); });
+			var uploadIndex = 0;
+			var order = editPhotos.map(function (photo) {
+				if (!photo.blob) { return photo.id; }
+				form.append('photos[]', photo.blob, photo.name);
+				return 'new:' + uploadIndex++;
+			});
+			form.append('photo_order', JSON.stringify(order));
+			api(authorName ? cfg.myUpdateUrl : cfg.updateUrl, form)
 				.then(function (data) {
-					toast(data.message);
-					loadPosts();
+					cleanup();
+					if (authorName) {
+						loadMyPosts();
+					} else {
+						toast(data.message);
+						loadPosts();
+					}
 				})
 				.catch(function (error) {
-					save.disabled = false;
-					toast(error.message, true);
+					lockPhotos(false);
+					errorNote.textContent = error.message;
 				});
 		});
 
@@ -1049,6 +1230,7 @@
 		cancel.className = 'skt-btn skt-btn-small skt-btn-ghost';
 		cancel.textContent = 'やめる';
 		cancel.addEventListener('click', function () {
+			cleanup();
 			editor.remove();
 		});
 
@@ -1059,6 +1241,10 @@
 		editor.appendChild(titleInput);
 		editor.appendChild(bodyLabel);
 		editor.appendChild(bodyInput);
+		editor.appendChild(note('写真（先頭の写真が表紙になります）。取り外した写真も保存するまでは記事に残ります。'));
+		editor.appendChild(photoBox);
+		editor.appendChild(addPhotos);
+		editor.appendChild(errorNote);
 		editor.appendChild(row);
 		card.appendChild(editor);
 

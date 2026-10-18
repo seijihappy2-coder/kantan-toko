@@ -393,6 +393,9 @@ body {
 
 .skt-editor .skt-label:first-child { margin-top: 0; }
 
+.skt-mine-row { flex-wrap: wrap; }
+.skt-mine-row .skt-editor { flex: 0 0 100%; min-width: 0; box-sizing: border-box; }
+
 .skt-gap { margin-top: 8px; }
 
 .skt-summary {
@@ -509,3 +512,14 @@ body {
 	margin-bottom: 16px;
 	text-decoration: none;
 }
+
+.skt-edit-photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 12px 0; }
+.skt-edit-photo { min-width: 0; }
+.skt-edit-photo img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; }
+.skt-edit-photo label { display: block; font-size: 14px; }
+.skt-editor input[type=file] { max-width: 100%; margin: 8px 0; }
+
+.skt-preview { margin-top: 16px; padding: 16px; border: 1px solid var(--skt-border); border-radius: 12px; background: #fff; width: 100%; box-sizing: border-box; }
+.skt-mine-row .skt-preview { flex: 0 0 100%; min-width: 0; }
+.skt-preview-body { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 16px; }
+.skt-preview img { display: block; max-width: 100%; height: auto; margin: 12px auto; }

@@ -101,11 +101,11 @@ class SKT_Post_Creator {
 
 	/**
 	 * ツールから作った記事の、タイトルと文章を書き直す。
-	 * 写真はそのまま（順番も）残す。
+	 * 写真の指定がなければ、写真と順番を残す。
 	 *
 	 * @return true|WP_Error
 	 */
-	public static function update_text( $post_id, $title, $body ) {
+	public static function update_text( $post_id, $title, $body, $attachment_ids = null ) {
 		$post_id = (int) $post_id;
 		$post    = get_post( $post_id );
 
@@ -122,8 +122,12 @@ class SKT_Post_Creator {
 			$title = self::title_from_body( $body );
 		}
 
-		$photo_ids = get_post_meta( $post_id, '_skt_photo_ids', true );
+		$old_photo_ids = (array) get_post_meta( $post_id, '_skt_photo_ids', true );
+		$photo_ids = null === $attachment_ids ? get_post_meta( $post_id, '_skt_photo_ids', true ) : $attachment_ids;
 		$photo_ids = is_array( $photo_ids ) ? array_map( 'intval', $photo_ids ) : array();
+		if ( '' === $body && empty( $photo_ids ) ) {
+			return new WP_Error( 'skt_empty', '写真か文章のどちらかは入れてください。' );
+		}
 
 		$result = wp_update_post(
 			array(
@@ -139,6 +143,24 @@ class SKT_Post_Creator {
 		}
 
 		update_post_meta( $post_id, '_skt_body_text', $body );
+		if ( null !== $attachment_ids ) {
+			// 記事から外した写真は添付関係も外す。画像ファイルは残す。
+			foreach ( array_diff( array_map( 'intval', $old_photo_ids ), $photo_ids ) as $removed_id ) {
+				$attachment = get_post( $removed_id );
+				if ( $attachment && (int) $attachment->post_parent === $post_id ) {
+					wp_update_post( array( 'ID' => $removed_id, 'post_parent' => 0 ) );
+				}
+			}
+			update_post_meta( $post_id, '_skt_photo_ids', $photo_ids );
+			if ( $photo_ids ) {
+				set_post_thumbnail( $post_id, $photo_ids[0] );
+			} else {
+				delete_post_thumbnail( $post_id );
+			}
+			foreach ( $photo_ids as $id ) {
+				wp_update_post( array( 'ID' => $id, 'post_parent' => $post_id ) );
+			}
+		}
 
 		return true;
 	}

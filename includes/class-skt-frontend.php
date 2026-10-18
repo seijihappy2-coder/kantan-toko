@@ -93,6 +93,7 @@ class SKT_Frontend {
 			'galleryUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/gallery' ) ),
 			'myPostsUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/my-posts' ) ),
 			'myStatusUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/my-status' ) ),
+			'myUpdateUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/my-update' ) ),
 			'publishesNow'    => 'publish' === $settings['post_status'],
 			'categories'      => self::categories(),
 			'authors'         => SKT_Settings::author_names(),
@@ -199,7 +200,7 @@ class SKT_Frontend {
 
 	<details id="skt-mine" class="skt-card skt-help" hidden>
 		<summary class="skt-summary">自分の投稿</summary>
-		<p class="skt-note">名前を選ぶと、その名前で送った記事が出ます。「見る」で確かめて、「公開する」でブログにのせられます。</p>
+		<p class="skt-note">名前を選ぶと、その名前で送った記事が出ます。「プレビュー」で下書きを確かめて、「公開する」でブログにのせられます。</p>
 		<div id="skt-mine-list"></div>
 	</details>
 
@@ -232,7 +233,7 @@ class SKT_Frontend {
 
 			<?php if ( 'publish' !== $settings['post_status'] ) : ?>
 			<dt>送ったのにブログに出ない</dt>
-			<dd>送っただけでは出ません。「自分の投稿」を開いて、「見る」で確かめてから「公開する」を押してください。</dd>
+			<dd>送っただけでは出ません。「自分の投稿」を開いて、「プレビュー」で下書きを確かめてから「公開する」を押してください。</dd>
 			<?php endif; ?>
 
 			<?php if ( ! empty( $settings['help_contact'] ) ) : ?>
