@@ -25,6 +25,11 @@ class SKT_Rest {
 	}
 
 	public static function register_routes() {
+		register_rest_route( self::NS, '/my-trash', array(
+			'methods' => 'POST',
+			'callback' => array( __CLASS__, 'handle_my_trash' ),
+			'permission_callback' => '__return_true',
+		) );
 		register_rest_route( self::NS, '/my-update', array(
 			'methods' => 'POST',
 			'callback' => array( __CLASS__, 'handle_my_update' ),
@@ -278,11 +283,12 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'ok' => true, 'posts' => array() ), 200 );
 		}
 
+		$trashed = '1' === (string) $request->get_param( 'trash' );
 		$posts = get_posts(
 			array(
 				'post_type'        => 'post',
-				'post_status'      => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-				'numberposts'      => 10,
+				'post_status'      => $trashed ? array( 'trash' ) : array( 'publish', 'draft', 'pending', 'private', 'future' ),
+				'numberposts'      => $trashed ? 30 : 10,
 				'category__not_in' => SKT_Settings::protected_categories(),
 				'meta_key'    => '_skt_author_name', // phpcs:ignore WordPress.DB.SlowDBQuery
 				'meta_value'  => $author_name, // phpcs:ignore WordPress.DB.SlowDBQuery
@@ -304,7 +310,7 @@ class SKT_Rest {
 			);
 		}
 
-		return new WP_REST_Response( array( 'ok' => true, 'posts' => $items ), 200 );
+		return new WP_REST_Response( array( 'ok' => true, 'posts' => $items, 'trashDays' => (int) EMPTY_TRASH_DAYS ), 200 );
 	}
 
 	/**
@@ -316,9 +322,12 @@ class SKT_Rest {
 	 *
 	 * @return WP_Post|null 記事でなければ null。
 	 */
-	private static function editable_post( $post_id ) {
+	private static function editable_post( $post_id, $allow_trash = false ) {
 		$post = get_post( (int) $post_id );
 		if ( ! $post || 'post' !== $post->post_type ) {
+			return null;
+		}
+		if ( ! $allow_trash && 'trash' === $post->post_status ) {
 			return null;
 		}
 		if ( SKT_Settings::post_is_protected( $post->ID ) ) {
@@ -344,7 +353,7 @@ class SKT_Rest {
 
 		$post_id = (int) $request->get_param( 'post_id' );
 		$post    = self::editable_post( $post_id );
-		if ( ! $post ) {
+		if ( ! $post || 'trash' === $post->post_status ) {
 			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
 		}
 
@@ -398,6 +407,60 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 400 );
 		}
 		return new WP_REST_Response( array( 'ok' => true, 'message' => '書き直しました。' ), 200 );
+	}
+
+	/** 自分の投稿をゴミ箱へ移す、または下書きとして戻す。 */
+	public static function handle_my_trash( WP_REST_Request $request ) {
+		if ( self::too_many( 'manage', self::MANAGE_LIMIT ) ) {
+			return new WP_REST_Response( array( 'message' => '少し時間をおいてからお試しください。' ), 429 );
+		}
+		if ( '' === self::role_of( $request ) ) {
+			return new WP_REST_Response( array( 'message' => '合言葉が違います。' ), 403 );
+		}
+		$post_id = (int) $request->get_param( 'post_id' );
+		$post = self::editable_post( $post_id, true );
+		if ( ! $post ) {
+			return new WP_REST_Response( array( 'message' => 'この記事は変更できません。' ), 404 );
+		}
+		$author = sanitize_text_field( (string) $request->get_param( 'author_name' ) );
+		if ( '' === $author || $author !== (string) get_post_meta( $post_id, '_skt_author_name', true ) ) {
+			return new WP_REST_Response( array( 'message' => 'これはご自身の投稿ではないため、変更できません。' ), 403 );
+		}
+		$op = (string) $request->get_param( 'op' );
+		if ( 'trash' === $op ) {
+			// ゴミ箱が無効だと wp_trash_post は完全削除するため、必ず止める。
+			if ( (int) EMPTY_TRASH_DAYS <= 0 ) {
+				return new WP_REST_Response( array( 'message' => 'このサイトではゴミ箱が使えません。「下書きに戻す」をお使いください。' ), 400 );
+			}
+			if ( ! in_array( $post->post_status, array( 'publish', 'draft', 'pending', 'private', 'future' ), true ) ) {
+				return new WP_REST_Response( array( 'message' => 'この記事は既に移動されています。一覧を開き直してください。' ), 409 );
+			}
+			$result = wp_trash_post( $post_id );
+			$message = 'ゴミ箱へ移しました。下の「ゴミ箱」から元に戻せます。';
+			$expected_status = 'trash';
+		} elseif ( 'restore' === $op ) {
+			if ( 'trash' !== $post->post_status ) {
+				return new WP_REST_Response( array( 'message' => 'この記事はゴミ箱にありません。一覧を開き直してください。' ), 409 );
+			}
+			// 以前の公開状態に戻す設定があっても、この操作では下書きに戻す。
+			$as_draft = function ( $status, $id ) use ( $post_id ) {
+				return (int) $id === $post_id ? 'draft' : $status;
+			};
+			add_filter( 'wp_untrash_post_status', $as_draft, PHP_INT_MAX, 2 );
+			try {
+				$result = wp_untrash_post( $post_id );
+			} finally {
+				remove_filter( 'wp_untrash_post_status', $as_draft, PHP_INT_MAX );
+			}
+			$message = '下書きに戻しました。内容を確認してから公開してください。';
+			$expected_status = 'draft';
+		} else {
+			return new WP_REST_Response( array( 'message' => '操作を確認してください。' ), 400 );
+		}
+		if ( ! $result || is_wp_error( $result ) || $expected_status !== get_post_status( $post_id ) ) {
+			return new WP_REST_Response( array( 'message' => '変更できませんでした。一覧を開き直して確認してください。' ), 400 );
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'message' => $message ), 200 );
 	}
 
 	/* ---------- 管理モード（公開・非公開の切り替え） ---------- */
@@ -613,6 +676,9 @@ class SKT_Rest {
 			return new WP_REST_Response( array( 'message' => 'この記事は削除できません。' ), 404 );
 		}
 
+		if ( (int) EMPTY_TRASH_DAYS <= 0 ) {
+			return new WP_REST_Response( array( 'message' => 'このサイトではゴミ箱が使えません。非公開に戻してお使いください。' ), 400 );
+		}
 		if ( ! wp_trash_post( $post_id ) ) {
 			return new WP_REST_Response( array( 'message' => 'ゴミ箱へ移せませんでした。' ), 400 );
 		}
@@ -725,6 +791,8 @@ class SKT_Rest {
 	 */
 	private static function status_text( $status ) {
 		switch ( $status ) {
+			case 'trash':
+				return 'ゴミ箱';
 			case 'publish':
 				return '公開中';
 			case 'future':

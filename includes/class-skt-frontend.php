@@ -93,6 +93,8 @@ class SKT_Frontend {
 			'galleryUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/gallery' ) ),
 			'myPostsUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/my-posts' ) ),
 			'myStatusUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/my-status' ) ),
+			'trashDays'       => (int) EMPTY_TRASH_DAYS,
+			'myTrashUrl'      => esc_url_raw( rest_url( SKT_Rest::NS . '/my-trash' ) ),
 			'myUpdateUrl'     => esc_url_raw( rest_url( SKT_Rest::NS . '/my-update' ) ),
 			'publishesNow'    => 'publish' === $settings['post_status'],
 			'categories'      => self::categories(),
@@ -188,6 +190,8 @@ class SKT_Frontend {
 		<div class="skt-item-actions skt-gap">
 			<button type="button" id="skt-template" class="skt-btn skt-btn-small skt-btn-ghost" hidden>定型文を入れる</button>
 			<button type="button" id="skt-template-save" class="skt-btn skt-btn-small skt-btn-ghost skt-btn-quiet" hidden>自分の定型文にする</button>
+			<button type="button" id="skt-template-reset" class="skt-btn skt-btn-small skt-btn-ghost skt-btn-quiet" hidden>定型文のリセット</button>
+			<p id="skt-template-status" class="skt-note" role="status"></p>
 		</div>
 		<textarea id="skt-body" class="skt-textarea" rows="6" placeholder="今日の畑のようす、味の感想、おすすめの食べ方など"></textarea>
 
@@ -201,7 +205,17 @@ class SKT_Frontend {
 	<details id="skt-mine" class="skt-card skt-help" hidden>
 		<summary class="skt-summary">自分の投稿</summary>
 		<p class="skt-note">名前を選ぶと、その名前で送った記事が出ます。「プレビュー」で下書きを確かめて、「公開する」でブログにのせられます。</p>
+		<p id="skt-mine-status" class="skt-note" role="status"></p>
 		<div id="skt-mine-list"></div>
+		<details id="skt-my-trash">
+			<summary class="skt-summary">ゴミ箱</summary>
+			<p class="skt-note"><?php if ( (int) EMPTY_TRASH_DAYS > 0 ) : ?>
+				ゴミ箱へ移してから<?php echo (int) EMPTY_TRASH_DAYS; ?>日を過ぎると、自動的に削除されることがあります。元に戻すと下書きになります。
+			<?php else : ?>
+				このサイトではゴミ箱への移動は使えません。記事を下げるときは「下書きに戻す」をお使いください。
+			<?php endif; ?></p>
+			<div id="skt-my-trash-list"></div>
+		</details>
 	</details>
 
 	<?php if ( ! empty( $settings['link_url'] ) ) : ?>
@@ -228,7 +242,7 @@ class SKT_Frontend {
 
 			<?php if ( ! empty( $settings['template'] ) ) : ?>
 			<dt>「定型文を入れる」とは</dt>
-			<dd>作業記録の雛形が入ります。自分の書き方に直してから「自分の定型文にする」を押すと、次からその形で出ます。</dd>
+			<dd>作業記録の雛形が入ります。自分の書き方に直してから「自分の定型文にする」を押すと、次からその形で出ます。「定型文のリセット」で共通の定型文に戻せます。入力中の文章は変わりません。</dd>
 			<?php endif; ?>
 
 			<?php if ( 'publish' !== $settings['post_status'] ) : ?>

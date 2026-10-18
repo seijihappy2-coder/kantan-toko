@@ -21,6 +21,9 @@
 		help: document.getElementById('skt-help'),
 		mine: document.getElementById('skt-mine'),
 		mineList: document.getElementById('skt-mine-list'),
+		mineStatus: document.getElementById('skt-mine-status'),
+		myTrash: document.getElementById('skt-my-trash'),
+		myTrashList: document.getElementById('skt-my-trash-list'),
 		manage: document.getElementById('skt-manage'),
 		manageToast: document.getElementById('skt-manage-toast'),
 		list: document.getElementById('skt-list'),
@@ -55,6 +58,8 @@
 		submit: document.getElementById('skt-submit'),
 		template: document.getElementById('skt-template'),
 		templateSave: document.getElementById('skt-template-save'),
+		templateReset: document.getElementById('skt-template-reset'),
+		templateStatus: document.getElementById('skt-template-status'),
 		again: document.getElementById('skt-again'),
 		max: document.getElementById('skt-max')
 	};
@@ -84,6 +89,21 @@
 	 */
 	function myTemplate() {
 		return load(STORE_TPL) || cfg.template || '';
+	}
+
+	function updateTemplateButtons() {
+		el.template.hidden = !myTemplate();
+		el.templateSave.hidden = el.template.hidden;
+		el.templateReset.hidden = !load(STORE_TPL);
+	}
+
+	function resetTemplate() {
+		store(STORE_TPL, null);
+		updateTemplateButtons();
+		el.templateStatus.textContent = load(STORE_TPL)
+			? 'リセットできませんでした。ブラウザの保存設定を確認してください。'
+			: '共通の定型文に戻しました。入力中の文章はそのままです。';
+		if (!load(STORE_TPL)) { el.body.focus(); }
 	}
 
 	/**
@@ -278,8 +298,7 @@
 			}
 		});
 		el.category.addEventListener('change', toggleNewCategory);
-		el.template.hidden = !myTemplate();
-		el.templateSave.hidden = el.template.hidden;
+		updateTemplateButtons();
 		el.template.addEventListener('click', function () {
 			// {日付} は今日の日付に差し替えて入れる。
 			var text = myTemplate().split('{日付}').join(cfg.today || '');
@@ -292,9 +311,11 @@
 			var current = el.body.value.trim();
 			// 今日の日付は {日付} に戻して覚える。空なら共通の雛形に戻す。
 			store(STORE_TPL, current ? current.split(cfg.today || '\u0000').join('{日付}') : null);
-			el.template.hidden = !myTemplate();
+			updateTemplateButtons();
+			el.templateStatus.textContent = '';
 			flash(el.templateSave, current ? '覚えました' : '共通に戻しました');
 		});
+		el.templateReset.addEventListener('click', resetTemplate);
 		el.catAdd.addEventListener('click', function () {
 			var name = el.catNew.value.trim();
 			if (!name) { return; }
@@ -316,6 +337,9 @@
 		document.getElementById('skt-install-close').addEventListener('click', function () {
 			store(STORE_HINT, 'done');
 			document.getElementById('skt-install').hidden = true;
+		});
+		el.myTrash.addEventListener('toggle', function () {
+			if (el.myTrash.open) { loadMyTrash(); }
 		});
 		el.mine.addEventListener('toggle', function () {
 			if (el.mine.open) { loadMyPosts(); }
@@ -684,6 +708,7 @@
 
 	function loadMyPosts() {
 		var name = currentAuthor();
+		if (el.myTrash.open) { loadMyTrash(); }
 		el.mineList.textContent = '';
 
 		if (!name) {
@@ -695,6 +720,8 @@
 
 		api(cfg.myPostsUrl, { author_name: name })
 			.then(function (data) {
+				if (name !== currentAuthor()) { return; }
+				if (data.trashDays !== undefined) { cfg.trashDays = data.trashDays; }
 				renderMyPosts(data.posts || []);
 			})
 			.catch(function (error) {
@@ -738,6 +765,7 @@
 			row.appendChild(buildView(post, row, currentAuthor()));
 
 			row.appendChild(buildMyToggle(post));
+			if (cfg.trashDays > 0) { row.appendChild(buildMyTrashAction(post, false)); }
 			if (post.editable) {
 				var edit = document.createElement('button');
 				edit.type = 'button';
@@ -751,6 +779,69 @@
 
 			el.mineList.appendChild(row);
 		});
+	}
+
+	function loadMyTrash() {
+		var name = currentAuthor();
+		el.myTrashList.textContent = '';
+		if (!name) {
+			el.myTrashList.appendChild(note('先に上の「名前」を入れてください。'));
+			return;
+		}
+		el.myTrashList.appendChild(note('読み込んでいます…'));
+		api(cfg.myPostsUrl, { author_name: name, trash: '1' }).then(function (data) {
+			if (name !== currentAuthor()) { return; }
+			renderMyTrash(data.posts || []);
+		}).catch(function (error) {
+			if (name !== currentAuthor()) { return; }
+			el.myTrashList.textContent = '';
+			el.myTrashList.appendChild(note(error.message));
+		});
+	}
+
+	function renderMyTrash(posts) {
+		el.myTrashList.textContent = '';
+		if (!posts.length) {
+			el.myTrashList.appendChild(note('ゴミ箱は空です。'));
+			return;
+		}
+		el.myTrashList.appendChild(note('ゴミ箱の記事を新しい順に30件まで表示しています。'));
+		posts.forEach(function (post) {
+			var row = document.createElement('div');
+			row.className = 'skt-mine-row';
+			var title = document.createElement('span');
+			title.className = 'skt-mine-texts';
+			title.textContent = post.title + '（' + post.date + '）';
+			row.appendChild(title);
+			row.appendChild(buildMyTrashAction(post, true));
+			el.myTrashList.appendChild(row);
+		});
+	}
+
+	function buildMyTrashAction(post, restore) {
+		var name = currentAuthor();
+		var button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'skt-btn skt-btn-small skt-btn-ghost' + (restore ? '' : ' skt-btn-quiet');
+		button.textContent = restore ? '元に戻す' : 'ゴミ箱へ';
+		button.addEventListener('click', function () {
+			if (name !== currentAuthor()) {
+				el.mineStatus.textContent = '名前が変わりました。一覧を開き直してください。';
+				return;
+			}
+			if (!restore && !window.confirm('「' + post.title + '」をゴミ箱へ移します。ブログには表示されなくなります。よろしいですか？')) { return; }
+			button.disabled = true;
+			el.mineStatus.textContent = '';
+			api(cfg.myTrashUrl, { post_id: post.id, author_name: name, op: restore ? 'restore' : 'trash' }).then(function (data) {
+				if (name !== currentAuthor()) { return; }
+				el.mineStatus.textContent = data.message;
+				loadMyPosts();
+			}).catch(function (error) {
+				button.disabled = false;
+				if (name === currentAuthor()) { el.mineStatus.textContent = error.message; }
+			});
+		});
+		return button;
 	}
 
 	/**
