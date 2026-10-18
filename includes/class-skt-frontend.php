@@ -131,6 +131,12 @@ class SKT_Frontend {
 		<p class="skt-sub"><?php echo esc_html( get_bloginfo( 'name' ) ); ?></p>
 	</header>
 
+	<nav id="skt-tabs" class="skt-tabs" aria-label="投稿メニュー" hidden>
+		<button type="button" class="skt-tab is-active" data-target="post" aria-controls="skt-form" aria-pressed="true"><span>新しく投稿</span><small>写真とひとことを送る</small></button>
+		<button type="button" class="skt-tab" data-target="mine" aria-controls="skt-mine" aria-pressed="false"><span>自分の投稿</span><small>確認・編集・ゴミ箱</small></button>
+		<button type="button" class="skt-tab skt-tab-admin" data-target="manage" aria-controls="skt-manage" aria-pressed="false" hidden><span>確認・公開</span><small>管理者用</small></button>
+	</nav>
+
 	<div id="skt-install" class="skt-install" hidden>
 		<span class="skt-install-icon" id="skt-icon-ios" hidden aria-hidden="true">
 			<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -146,10 +152,6 @@ class SKT_Frontend {
 		<button type="button" id="skt-install-close" class="skt-btn skt-btn-small skt-btn-ghost">閉じる</button>
 	</div>
 
-	<nav id="skt-tabs" class="skt-tabs" hidden>
-		<button type="button" class="skt-tab is-active" data-target="post">投稿する</button>
-		<button type="button" class="skt-tab" data-target="manage">確認・公開</button>
-	</nav>
 
 	<section id="skt-login" class="skt-card" hidden>
 		<h2>合言葉を入れてください</h2>
@@ -164,7 +166,16 @@ class SKT_Frontend {
 		<p class="skt-note">管理画面の「かんたん投稿」で合言葉を設定してください。</p>
 	</section>
 
+	<section id="skt-author-card" class="skt-card skt-author-card" aria-label="投稿する人" hidden>
+		<label class="skt-label" for="skt-author">名前</label>
+		<p class="skt-note">投稿したときと同じ名前を選ぶと、自分の記事を確認できます。</p>
+		<select id="skt-author" class="skt-select"></select>
+		<input type="text" id="skt-new-author" class="skt-input skt-gap" placeholder="お名前を入れてください" hidden>
+	</section>
+
 	<form id="skt-form" class="skt-card" hidden>
+		<h2>今日のようすを届ける</h2>
+		<p class="skt-note">写真かひとこと、どちらかだけでも大丈夫です。</p>
 		<label class="skt-label" for="skt-photos">写真</label>
 		<p class="skt-note">最大<span id="skt-max"></span>枚。スマホで撮った写真をそのまま選べます。</p>
 		<input type="file" id="skt-photos" accept="image/*" multiple hidden>
@@ -174,10 +185,6 @@ class SKT_Frontend {
 		</button>
 		<div id="skt-previews" class="skt-previews"></div>
 
-		<label class="skt-label" for="skt-author">名前</label>
-		<p class="skt-note">はじめての方は「＋ 新しい名前を入れる」を選んでください。次からは一覧に出ます。</p>
-		<select id="skt-author" class="skt-select"></select>
-		<input type="text" id="skt-new-author" class="skt-input skt-gap" placeholder="お名前を入れてください" hidden>
 
 		<label class="skt-label" for="skt-category">カテゴリ</label>
 		<select id="skt-category" class="skt-select"></select>
@@ -198,12 +205,12 @@ class SKT_Frontend {
 		<button type="submit" id="skt-submit" class="skt-btn skt-btn-primary skt-btn-send">送信する</button>
 		<p id="skt-form-error" class="skt-error" hidden></p>
 		<?php if ( 'publish' !== $settings['post_status'] ) : ?>
-		<p class="skt-note skt-foot">送信すると下書きとして保存されます。下の「自分の投稿」で見て、よければ「公開する」を押してください。</p>
+		<p class="skt-note skt-foot">送信すると下書きとして保存されます。上の「自分の投稿」で見て、よければ「公開する」を押してください。</p>
 		<?php endif; ?>
 	</form>
 
-	<details id="skt-mine" class="skt-card skt-help" hidden>
-		<summary class="skt-summary">自分の投稿</summary>
+	<section id="skt-mine" class="skt-card" hidden>
+		<h2>自分の投稿</h2>
 		<p class="skt-note">名前を選ぶと、その名前で送った記事が出ます。「プレビュー」で下書きを確かめて、「公開する」でブログにのせられます。</p>
 		<p id="skt-mine-status" class="skt-note" role="status"></p>
 		<div id="skt-mine-list"></div>
@@ -216,7 +223,7 @@ class SKT_Frontend {
 			<?php endif; ?></p>
 			<div id="skt-my-trash-list"></div>
 		</details>
-	</details>
+	</section>
 
 	<?php if ( ! empty( $settings['link_url'] ) ) : ?>
 	<a class="skt-btn skt-btn-ghost skt-reference" href="<?php echo esc_url( $settings['link_url'] ); ?>" target="_blank" rel="noopener">
@@ -247,7 +254,7 @@ class SKT_Frontend {
 
 			<?php if ( 'publish' !== $settings['post_status'] ) : ?>
 			<dt>送ったのにブログに出ない</dt>
-			<dd>送っただけでは出ません。「自分の投稿」を開いて、「プレビュー」で下書きを確かめてから「公開する」を押してください。</dd>
+			<dd>送っただけでは出ません。上の「自分の投稿」を開いて、「プレビュー」で下書きを確かめてから「公開する」を押してください。</dd>
 			<?php endif; ?>
 
 			<?php if ( ! empty( $settings['help_contact'] ) ) : ?>

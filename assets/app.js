@@ -44,6 +44,7 @@
 		pick: document.getElementById('skt-pick'),
 		fileInput: document.getElementById('skt-photos'),
 		previews: document.getElementById('skt-previews'),
+		authorCard: document.getElementById('skt-author-card'),
 		author: document.getElementById('skt-author'),
 		newAuthor: document.getElementById('skt-new-author'),
 		category: document.getElementById('skt-category'),
@@ -161,12 +162,14 @@
 	/* ---------- 画面の出し分け ---------- */
 
 	function show(section) {
-		[el.login, el.setup, el.form, el.sending, el.done, el.manage].forEach(function (node) {
+		[el.login, el.setup, el.form, el.mine, el.sending, el.done, el.manage].forEach(function (node) {
 			if (node) { node.hidden = node !== section; }
 		});
 		el.help.hidden = section !== el.form;
-		el.mine.hidden = section !== el.form;
-		markTab(section === el.manage ? 'manage' : 'post');
+		el.authorCard.hidden = section !== el.form && section !== el.mine;
+		el.tabs.hidden = section !== el.form && section !== el.mine && section !== el.manage;
+		Array.prototype.forEach.call(el.tabs.querySelectorAll('.skt-tab-admin'), function (tab) { tab.hidden = !isAdmin(); });
+		markTab(section === el.manage ? 'manage' : (section === el.mine ? 'mine' : 'post'));
 		window.scrollTo(0, 0);
 	}
 
@@ -177,6 +180,7 @@
 	function markTab(target) {
 		Array.prototype.forEach.call(el.tabs.querySelectorAll('.skt-tab'), function (tab) {
 			tab.classList.toggle('is-active', tab.dataset.target === target);
+			tab.setAttribute('aria-pressed', String(tab.dataset.target === target));
 		});
 	}
 
@@ -208,7 +212,6 @@
 		}
 
 		if (load(STORE_PASS) || cfg.authedRole) {
-			el.tabs.hidden = !isAdmin();
 			show(el.form);
 		} else {
 			show(el.login);
@@ -296,6 +299,12 @@
 			if (el.author.value !== NEW_AUTHOR) {
 				store(STORE_AUTHOR, el.author.value);
 			}
+			el.mineStatus.textContent = '';
+			if (!el.mine.hidden) { loadMyPosts(); }
+		});
+		el.newAuthor.addEventListener('change', function () {
+			el.mineStatus.textContent = '';
+			if (!el.mine.hidden) { loadMyPosts(); }
 		});
 		el.category.addEventListener('change', toggleNewCategory);
 		updateTemplateButtons();
@@ -325,7 +334,10 @@
 		});
 		Array.prototype.forEach.call(el.tabs.querySelectorAll('.skt-tab'), function (tab) {
 			tab.addEventListener('click', function () {
-				if (tab.dataset.target === 'manage') {
+				if (tab.dataset.target === 'mine') {
+					show(el.mine);
+					loadMyPosts();
+				} else if (tab.dataset.target === 'manage' && isAdmin()) {
 					show(el.manage);
 					loadPosts();
 				} else {
@@ -340,9 +352,6 @@
 		});
 		el.myTrash.addEventListener('toggle', function () {
 			if (el.myTrash.open) { loadMyTrash(); }
-		});
-		el.mine.addEventListener('toggle', function () {
-			if (el.mine.open) { loadMyPosts(); }
 		});
 		el.gal.addEventListener('toggle', function () {
 			if (el.gal.open) { loadGallery(); }
@@ -374,7 +383,6 @@
 					store(STORE_PASS, value);
 					store(STORE_ROLE, (data && data.role) || 'producer');
 					el.pass.value = '';
-					el.tabs.hidden = !isAdmin();
 					show(el.form);
 				});
 			})
@@ -619,7 +627,7 @@
 		el.body.value = '';
 		store(STORE_DRAFT, null);
 
-		if (el.mine.open) { loadMyPosts(); }
+		if (!el.mine.hidden) { loadMyPosts(); }
 
 		el.doneTitle.textContent = data.published ? '公開しました' : '送信しました';
 		el.doneText.textContent = data.message || '';
@@ -631,10 +639,8 @@
 			review.className = 'skt-btn skt-btn-ghost';
 			el.done.appendChild(review);
 			review.addEventListener('click', function () {
-				show(el.form);
-				el.mine.open = true;
+				show(el.mine);
 				loadMyPosts();
-				el.mine.scrollIntoView({ block: 'start' });
 			});
 		}
 		review.textContent = data.published ? '自分の投稿を確認する' : '下書きを確認する';
@@ -765,7 +771,6 @@
 			row.appendChild(buildView(post, row, currentAuthor()));
 
 			row.appendChild(buildMyToggle(post));
-			if (cfg.trashDays > 0) { row.appendChild(buildMyTrashAction(post, false)); }
 			if (post.editable) {
 				var edit = document.createElement('button');
 				edit.type = 'button';
@@ -777,6 +782,7 @@
 				row.appendChild(edit);
 			}
 
+			if (cfg.trashDays > 0) { row.appendChild(buildMyTrashAction(post, false)); }
 			el.mineList.appendChild(row);
 		});
 	}

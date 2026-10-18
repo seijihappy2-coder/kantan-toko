@@ -2,11 +2,11 @@
 :root {
 	--skt-green: #3f6b3a;
 	--skt-green-dark: #2e5029;
-	--skt-bg: #f6f4ee;
+	--skt-bg: #f5f4ed;
 	--skt-card: #ffffff;
 	--skt-text: #26241f;
-	--skt-muted: #6b675e;
-	--skt-border: #d9d4c7;
+	--skt-muted: #625f55;
+	--skt-border: #d9ded0;
 	--skt-error: #a8321f;
 }
 
@@ -50,8 +50,9 @@ body {
 .skt-card {
 	background: var(--skt-card);
 	border: 1px solid var(--skt-border);
-	border-radius: 14px;
-	padding: 20px 18px;
+	border-radius: 18px;
+	box-shadow: 0 4px 18px rgba(46, 80, 41, 0.035);
+	padding: 22px 18px;
 	margin-bottom: 16px;
 }
 
@@ -126,6 +127,8 @@ body {
 	border-radius: 10px;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	transition: transform 120ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .skt-btn-primary {
@@ -253,14 +256,16 @@ body {
 	display: flex;
 	gap: 6px;
 	margin-bottom: 14px;
-	background: #ece8dd;
-	border-radius: 10px;
-	padding: 4px;
+	background: #e7ecdf;
+	border: 1px solid #d9e1d0;
+	border-radius: 16px;
+	padding: 5px;
 }
 
 .skt-tab {
 	flex: 1;
-	min-height: 44px;
+	min-height: 70px;
+	padding: 10px 4px;
 	border: none;
 	border-radius: 8px;
 	background: transparent;
@@ -270,6 +275,10 @@ body {
 	font-weight: 700;
 	cursor: pointer;
 }
+
+.skt-tab span, .skt-tab small { display: block; }
+.skt-tab small { font-size: 11px; font-weight: 400; margin-top: 3px; }
+.skt-tab { transition: background-color 160ms ease, box-shadow 160ms ease, transform 120ms ease; }
 
 .skt-tab.is-active {
 	background: #fff;
@@ -393,7 +402,10 @@ body {
 
 .skt-editor .skt-label:first-child { margin-top: 0; }
 
-.skt-mine-row { flex-wrap: wrap; }
+.skt-mine-row > .skt-badge { grid-column: 1 / -1; justify-self: start; }
+.skt-mine-row > .skt-mine-texts { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.skt-mine-row > .skt-btn { width: 100%; min-height: 44px; margin-left: 0; }
+.skt-mine-row > .skt-editor, .skt-mine-row > .skt-preview { grid-column: 1 / -1; }
 .skt-mine-row .skt-editor { flex: 0 0 100%; min-width: 0; box-sizing: border-box; }
 
 .skt-gap { margin-top: 8px; }
@@ -462,8 +474,9 @@ body {
 .skt-gal-cell-admin:disabled { opacity: 0.5; }
 
 .skt-mine-row {
-	display: flex;
-	align-items: center;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
 	gap: 10px;
 	padding: 10px 0;
 	border-top: 1px solid var(--skt-border);
@@ -523,3 +536,23 @@ body {
 .skt-mine-row .skt-preview { flex: 0 0 100%; min-width: 0; }
 .skt-preview-body { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 16px; }
 .skt-preview img { display: block; max-width: 100%; height: auto; margin: 12px auto; }
+
+/* 操作への短い反応。動きを減らす設定ではアニメーションを止める。 */
+.skt-btn:not(:disabled):active, .skt-tab:active { transform: scale(0.98); }
+.skt-btn:disabled { cursor: wait; }
+.skt-btn:focus-visible, .skt-tab:focus-visible, summary:focus-visible { outline: 3px solid var(--skt-green-dark); outline-offset: 3px; }
+.skt-author-card { padding: 14px 18px; background: #fbfcf7; }
+.skt-author-card .skt-label { margin-top: 0; }
+.skt-author-card .skt-note { margin-bottom: 10px; }
+.skt-check { animation: skt-complete 240ms ease-out; }
+@keyframes skt-complete { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@media (hover: hover) and (pointer: fine) {
+ .skt-btn-primary:not(:disabled):hover { background: var(--skt-green-dark); box-shadow: 0 3px 10px rgba(46, 80, 41, 0.15); }
+ .skt-btn-ghost:not(:disabled):hover { background: #eef2e8; }
+ .skt-tab:not(.is-active):hover { background: rgba(255, 255, 255, 0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+ .skt-btn, .skt-tab { transition: none; }
+ .skt-btn:not(:disabled):active, .skt-tab:active { transform: none; }
+ .skt-check { animation: none; }
+}
