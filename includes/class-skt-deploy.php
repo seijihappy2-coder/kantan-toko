@@ -102,7 +102,10 @@ class SKT_Deploy {
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
-		$result   = $upgrader->upgrade( $plugin );
+		// upgrade() は REST 経由だと対象を無効化する。ブラウザから再有効化する
+		// 操作が続かないため、有効状態を維持する一括更新の処理を1件だけ使う。
+		$results  = $upgrader->bulk_upgrade( array( $plugin ) );
+		$result   = is_array( $results ) && isset( $results[ $plugin ] ) ? $results[ $plugin ] : false;
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 500 );
@@ -110,6 +113,12 @@ class SKT_Deploy {
 		if ( ! $result ) {
 			return new WP_REST_Response(
 				array( 'message' => '更新できませんでした。サーバーの書き込み権限を確認してください。' ),
+				500
+			);
+		}
+		if ( ! is_plugin_active( $plugin ) ) {
+			return new WP_REST_Response(
+				array( 'message' => 'ファイルは更新されましたが、プラグインが停止しています。管理画面で「かんたん投稿」を有効化してください。' ),
 				500
 			);
 		}

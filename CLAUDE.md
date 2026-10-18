@@ -87,3 +87,5 @@
 
 版番号は `kantan-toko.php` の `Version:` と `SKT_VERSION` の2か所。
 利用者に渡すのは zip。README.md と 使い方-生産者向け.md も必要に応じて直す。
+
+- 即時更新のREST処理で `Plugin_Upgrader::upgrade()` を使うと、更新前にプラグインが無効になり、後続のブラウザ操作がないため停止したままになる。`bulk_upgrade(array($plugin))` で有効状態を維持し、更新後に有効状態も確認する。更新成功ログだけで画面が稼働していると判断しない。
